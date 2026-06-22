@@ -24,7 +24,7 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       desktop: ${{ steps.filter.outputs.desktop }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d  # v4.0.1
         id: filter
         with:
@@ -54,7 +54,7 @@ jobs:
     if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
@@ -74,7 +74,7 @@ jobs:
       run:
         working-directory: src/PuntoVenta.Web
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Enable corepack
         run: corepack enable
       - uses: actions/setup-node@v6
@@ -104,7 +104,7 @@ jobs:
       run:
         working-directory: src/PuntoVenta.Desktop
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Enable corepack
         run: corepack enable
       - uses: actions/setup-node@v6
@@ -126,7 +126,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e  # v3.0.0
@@ -139,7 +139,7 @@ jobs:
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Semgrep scan
         run: |
           semgrep ci \
