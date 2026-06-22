@@ -126,7 +126,7 @@ jobs:
       - name: Checksum + metadata
         run: node ../../.github/scripts/release-meta.mjs "${{ matrix.asset_os }}" "${{ matrix.asset_label }}" "$VERSION" "${{ matrix.pattern }}"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist-${{ matrix.asset_os }}
           path: |
