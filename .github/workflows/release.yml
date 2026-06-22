@@ -95,7 +95,7 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
       TARGET_RID: ${{ matrix.target_rid }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Enable corepack
         run: corepack enable
@@ -152,7 +152,7 @@ jobs:
       R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
       R2_BUCKET: ${{ secrets.R2_BUCKET }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/download-artifact@v8
         with:
