@@ -1,0 +1,73 @@
+appId: com.puntoventalite.desktop
+productName: Punto Venta Lite
+copyright: © 2026 Punto Venta Lite
+
+# Hook renombra _modules -> node_modules dentro de la .app antes de
+# firmar (electron-builder filtra "node_modules" de extraResources sin
+# importar el filter). Ver scripts/after-pack.mjs.
+afterPack: ./scripts/after-pack.mjs
+
+directories:
+  output: release
+  buildResources: resources
+
+# serialport@13 (@serialport/bindings-cpp) es N-API con prebuilds para todas
+# las plataformas (darwin-x64+arm64, win32-x64, linux-*). node-gyp-build elige
+# el .node correcto en runtime — no hay que recompilar por target. Desactivar
+# el rebuild permite cross-compilar el instalador Windows desde mac (node-gyp
+# no cross-compila desde source) y es inofensivo en builds nativos.
+npmRebuild: false
+
+# Los binarios nativos no se pueden cargar desde dentro del asar — sacarlos.
+asarUnpack:
+  - "**/node_modules/serialport/**"
+  - "**/node_modules/@serialport/**"
+
+files:
+  - dist/**/*
+  - "!**/*.map"
+  - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+  - "!**/node_modules/.bin"
+
+extraResources:
+  # standalone-staged tiene node_modules renombrado a _modules (stage-next.mjs
+  # lo hace antes de correr esto). afterPack.mjs renombra de vuelta dentro de
+  # la .app antes de firmar.
+  - from: standalone-staged
+    to: standalone
+  - from: resources/api
+    to: api
+
+mac:
+  category: public.app-category.business
+  target:
+    - dmg
+    - zip
+  icon: resources/icon.png
+  artifactName: PuntoVentaLite-${version}-${arch}.${ext}
+  # Sin Developer ID = ad-hoc sign. Hardened runtime requiere cert real
+  # de Apple para que Gatekeeper acepte launch desde Finder; con ad-hoc
+  # + hardened runtime, macOS Sequoia rechaza silente. Sin hardened
+  # runtime el .app igual no pasa Gatekeeper si no tiene quarantine
+  # bypass, pero al menos permite right-click → Open.
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  identity: null
+
+win:
+  target:
+    - nsis
+  icon: resources/icon.ico
+  artifactName: PuntoVentaLite-${version}-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+
+linux:
+  target:
+    - AppImage
+  category: Office
+  icon: resources/icon.png
+  artifactName: PuntoVentaLite-${version}-${arch}.${ext}

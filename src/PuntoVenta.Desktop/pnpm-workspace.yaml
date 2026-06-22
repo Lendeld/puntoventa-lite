@@ -1,0 +1,49 @@
+packages:
+  - .
+
+# Whitelist de paquetes con permiso para correr postinstall/install scripts.
+# Electron descarga su binario nativo en postinstall; electron-winstaller
+# necesita compilar binarios de Windows.
+allowBuilds:
+  # serialport: bindings nativos (prebuilds o node-gyp) para impresoras serial.
+  '@serialport/bindings-cpp': true
+  electron: true
+  electron-winstaller: true
+  esbuild: true
+
+# Electron y electron-builder tienen subdeps con attestation perdida en
+# cada release. No bloqueamos por trust downgrade en este sub-proyecto.
+trustPolicy: permissive
+
+# electron-builder requiere `@electron/node-gyp` via git.
+blockExoticSubdeps: false
+
+# Cuarentena 7 dias para versiones nuevas (igual que web).
+# Desactivado temporalmente para permitir instalar nuevas deps (iconv-lite, vitest).
+# minimumReleaseAge: 10080
+resolutionMode: highest
+
+# La familia electron-builder (mismo publisher, versiones lockstep con la
+# 26.15.3 ya pineada en devDependencies) se publica en paralelo en cada
+# release — la cuarentena global de 7 dias bloquearia el install en cada
+# bump. Exclusion targeted; el resto de paquetes sigue en cuarentena.
+minimumReleaseAgeExclude:
+  - electron-builder
+  - electron-builder-squirrel-windows
+  - app-builder-lib
+  - builder-util
+  - builder-util-runtime
+  - dmg-builder
+  - electron-publish
+  - undici
+
+# Overrides para parchar CVEs en transitivas de electron-builder.
+# tar <7.5.11: symlink path traversal + arbitrary file overwrite (GHSA varios).
+# @tootallnate/once <3.0.1: incorrect control flow scoping.
+overrides:
+  tar: ">=7.5.11"
+  "@tootallnate/once": ">=3.0.1"
+  form-data: ">=4.0.6" # GHSA-hmw2-7cc7-3qxx — form-data >=4.0.0 <4.0.6
+  "tmp@<0.2.6": ">=0.2.6" # GHSA-52f5-9888-hmc6 — symlink arbitrary write
+  "undici@>=7.0.0 <7.28.0": "7.28.0" # GHSA-vmh5-mc38-953g / GHSA-pr7r-676h-xcf6
+  "undici@>=8.0.0 <8.5.0": "8.5.0" # GHSA-vmh5-mc38-953g / GHSA-pr7r-676h-xcf6

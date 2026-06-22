@@ -1,0 +1,197 @@
+name: Release
+
+# Pipeline de release automático. La VERSIÓN la define el tag (CalVer AAAA.MM.DD):
+#   git tag v2026.06.21 && git push origin v2026.06.21   ->  publica 2026.06.21
+#
+# Qué hace:
+#   1. Compila el instalador en runners nativos (macOS -> .dmg, Windows -> .exe),
+#      inyectando la versión del tag a electron-builder (-c.extraMetadata.version).
+#   2. Calcula sha256 + tamaño de cada instalador.
+#   3. Sube los instaladores a R2 bajo releases/<version>/ y genera releases/latest.json.
+#
+# Para probar sin taggear: Actions -> Release -> Run workflow (workflow_dispatch),
+# indicando la versión. `update_latest=false` sube los binarios pero NO pisa
+# releases/latest.json (no afecta lo que ve el landing).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión a publicar, sin la v (ej. 2026.06.21)"
+        required: true
+        type: string
+      update_latest:
+        description: "Pisar releases/latest.json (el landing apunta a esto)"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      date: ${{ steps.v.outputs.date }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+    steps:
+      - id: v
+        # Las expresiones ${{ }} van por env, no interpoladas en el shell
+        # (evita la inyección que marca el rule run-shell-injection de Semgrep).
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          # Versión por fecha (CalVer): AAAA.MM.DD (ej. 2026.06.21).
+          # Varias publicaciones el mismo día -> sufijo numérico: 2026.06.21.1, 2026.06.21.2.
+          # Sufijo con guion (2026.06.21-rc1, 0.0.0-test) = prerelease: no pisa latest.json.
+          case "$VERSION" in
+            *-*) PRERELEASE=true ;;
+            *)   PRERELEASE=false ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+          echo "Releasing version: $VERSION (prerelease=$PRERELEASE)"
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            ebflag: "--mac"
+            target_rid: osx-arm64
+            asset_os: mac-arm
+            asset_label: "macOS · Apple Silicon"
+            pattern: "PuntoVentaLite-*-arm64.dmg"
+          - os: windows-latest
+            ebflag: "--win --x64"
+            target_rid: win-x64
+            asset_os: win
+            asset_label: "Windows"
+            pattern: "PuntoVentaLite-*-x64.exe"
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: src/PuntoVenta.Desktop
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TARGET_RID: ${{ matrix.target_rid }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/PuntoVenta.Desktop/pnpm-lock.yaml
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install Desktop deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Web deps
+        working-directory: src/PuntoVenta.Web
+        run: pnpm install --frozen-lockfile
+
+      - name: Build bundle (API + Next standalone + main)
+        run: pnpm build
+
+      - name: Package installer
+        run: pnpm exec electron-builder ${{ matrix.ebflag }} -c.extraMetadata.version="$VERSION" --publish never
+
+      - name: Checksum + metadata
+        run: node ../../.github/scripts/release-meta.mjs "${{ matrix.asset_os }}" "${{ matrix.asset_label }}" "$VERSION" "${{ matrix.pattern }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.asset_os }}
+          path: |
+            src/PuntoVenta.Desktop/release/${{ matrix.pattern }}
+            src/PuntoVenta.Desktop/release/meta-${{ matrix.asset_os }}.json
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    # Gate de aprobación manual: el build corre solo, pero la publicación a R2
+    # espera tu OK. Configurá el Environment "release" en Settings -> Environments
+    # con "Required reviewers" = vos. Hasta entonces NO bloquea (corre directo).
+    environment: release
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_DATE: ${{ needs.prepare.outputs.date }}
+      PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Assemble latest.json
+        run: node .github/scripts/assemble-manifest.mjs "$VERSION" "$RELEASE_DATE" artifacts
+
+      - name: Upload installers to R2
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for f in artifacts/*/PuntoVentaLite-*; do
+            name=$(basename "$f")
+            echo "Subiendo $name -> releases/$VERSION/$name"
+            aws s3 cp "$f" "s3://$R2_BUCKET/releases/$VERSION/$name" --endpoint-url "$R2_ENDPOINT"
+          done
+
+      # latest.json es lo que ve el landing. Solo se pisa en releases finales
+      # (sin sufijo). Un tag de prueba como v0.0.0-test NO lo toca.
+      - name: Upload latest.json to R2
+        if: >-
+          (github.event_name == 'push' || inputs.update_latest)
+          && needs.prepare.outputs.prerelease != 'true'
+        run: |
+          aws s3 cp latest.json "s3://$R2_BUCKET/releases/latest.json" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --content-type application/json \
+            --cache-control "public, max-age=300"
+
+      - name: GitHub Release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRE=""
+          [ "$PRERELEASE" = "true" ] && PRE="--prerelease"
+          gh release create "v$VERSION" artifacts/*/PuntoVentaLite-* \
+            --title "v$VERSION" \
+            --notes "Release automático $VERSION." \
+            $PRE \
+            || gh release upload "v$VERSION" artifacts/*/PuntoVentaLite-* --clobber

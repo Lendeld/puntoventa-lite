@@ -1,0 +1,138 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+**/[Bb]in[\\]*/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+
+# pnpm local store/cache
+.pnpm-store/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# User-specific files
+*.config
+**/appsettings*.json
+!**/appsettings.example.json
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+*.env
+*.env.local
+*.env.*.local
+!.env.example
+!**/.env.example
+appsettings.local.json
+appsettings.*.local.json
+
+# Local credentials / certificates
+.npmrc
+.pypirc
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.pfx
+*.p12
+*.jks
+*.keystore
+
+# Local dumps / backups / archives
+*.bak
+*.backup
+*.dump
+*.sql
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# Publish output
+publish/
+PublishOutput/
+
+#Plugins local
+/plugins/caveman
+
+# Artefactos de release locales
+/releases/
+
+# PuntoVenta.Desktop — staged dir del cp -RL del Next standalone
+# (dist/, release/, resources/api, resources/pgsql, node_modules ya
+# ignored por src/PuntoVenta.Desktop/.gitignore).
+/src/PuntoVenta.Desktop/standalone-staged/
+
+# SonarQube local scan artifacts
+.sonarqube/
+.scannerwork/
+**/.sonarqube/
+**/.scannerwork/
+
+# SQLite local (DB de desarrollo/desktop — no versionar)
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal

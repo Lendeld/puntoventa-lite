@@ -1,0 +1,25 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <TargetFramework>net10.0</TargetFramework>
+
+    <!-- Language settings -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Code analysis -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+    <!-- Assembly info -->
+    <Company>PuntoVenta</Company>
+    <Authors>PuntoVenta Team</Authors>
+
+    <!-- Versión de la app. En dev queda 0.0.0-dev; el release la sobrescribe con
+         la versión del tag CalVer vía `dotnet publish -p:Version=...` (ver
+         publish-api.mjs). La lee InfoSistema en runtime (Acerca y respaldos). -->
+    <Version>0.0.0-dev</Version>
+  </PropertyGroup>
+</Project>

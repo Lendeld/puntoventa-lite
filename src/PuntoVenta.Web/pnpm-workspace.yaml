@@ -1,0 +1,43 @@
+packages:
+  - .
+
+# Layout flat (npm-style) en lugar del default symlinked .pnpm/. Necesario
+# para que Next standalone genere .next/standalone/node_modules con archivos
+# reales y se pueda cp -R al bundle Electron sin romper symlinks/peer deps.
+# Vercel respeta el yaml, comportamiento de deploy identico.
+nodeLinker: hoisted
+
+# Espera 7 días (10080 min) tras publicación antes de instalar. Reduce exposición a malware reciente.
+minimumReleaseAge: 10080
+
+# Excepcion puntual para parches de seguridad transitivos bloqueados por cuarentena.
+minimumReleaseAgeExclude:
+  - undici
+
+# Bloquea deps transitivas que vengan de git/tarball URLs. Solo fuentes confiables (registry).
+blockExoticSubdeps: true
+
+# Rechaza versiones que bajan de nivel de trust (ej: perdieron provenance attestation). Posible takeover.
+trustPolicy: no-downgrade
+
+# Paquetes excluidos del check de trust-downgrade (revisados manualmente, mantenedores legítimos).
+trustPolicyExclude:
+  - eslint-import-resolver-typescript
+  - semver # transitivo de babel/eslint, mantenido por npm/isaacs, sin provenance attestation
+
+# Overrides de versiones transitivas (parches de seguridad)
+overrides:
+  postcss: ">=8.5.10" # GHSA-qx2v-qp2m-jg93 — XSS via </style> sin escapar (<8.5.10)
+  reselect: "5.2.0" # GHSA-5h8m-9c6x-2j5v — Prototype Pollution (<5.2.0)
+  vite: ">=8.0.16" # GHSA-fx2h-pf6j-xcff / GHSA-v6wh-96g9-6wx3 — vite <=8.0.15
+  js-yaml: ">=4.2.0" # GHSA-h67p-54hq-rp68 — js-yaml <=4.1.1
+  "@babel/core": ">=7.29.6" # GHSA-4x5r-pxfx-6jf8 — @babel/core <=7.29.0
+  "undici@>=7.0.0 <7.28.0": "7.28.0" # GHSA-vmh5-mc38-953g / GHSA-pr7r-676h-xcf6
+  "undici@>=8.0.0 <8.5.0": "8.5.0" # GHSA-vmh5-mc38-953g / GHSA-pr7r-676h-xcf6
+
+# Whitelist de paquetes con permiso para correr postinstall/install scripts. Resto bloqueado por default.
+allowBuilds:
+  core-js-pure: false # "pure" ya precompilado, no necesita postinstall
+  msw: true # instala service worker en public/
+  sharp: true # compila bindings nativos libvips
+  unrs-resolver: true # binarios Rust nativos

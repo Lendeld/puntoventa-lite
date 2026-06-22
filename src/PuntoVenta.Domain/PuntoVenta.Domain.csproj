@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="ErrorOr" />
+    <PackageReference Include="Mediator.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="PuntoVenta.Infrastructure" />
+    <InternalsVisibleTo Include="PuntoVenta.UnitTests" />
+    <InternalsVisibleTo Include="PuntoVenta.IntegrationTests" />
+  </ItemGroup>
+</Project>

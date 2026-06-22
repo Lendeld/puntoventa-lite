@@ -1,0 +1,144 @@
+using PuntoVenta.Application.Commands.Ventas;
+using PuntoVenta.Domain.Entities.Productos;
+using PuntoVenta.Domain.Entities.Ventas;
+using PuntoVenta.UnitTests.Application.Ventas.Fakes;
+
+namespace PuntoVenta.UnitTests.Application.Ventas;
+
+public class EmitirNotasCreditoDebitoHandlerTests
+{
+    private static readonly Guid CajaId = DominioHelper.CajaId;
+
+    [Fact]
+    public async Task EmitirNotaCredito_DebeBloquearFacturaCreditoConAbonoActivo()
+    {
+        var factura = DominioHelper.CrearFacturaCreditoEmitida(CajaId);
+        factura.RegistrarAbonoCredito(
+            "CRC",
+            1m,
+            "01",
+            "Efectivo",
+            200m,
+            200m,
+            200m,
+            0m,
+            0m,
+            DominioHelper.FechaDocumento.AddHours(1),
+            DominioHelper.FechaDocumento.AddHours(1),
+            DominioHelper.FechaDocumento.AddHours(1),
+            Guid.NewGuid(),
+            null,
+            null);
+
+        var repo = new FakeDocumentoVentaRepository(detalle: factura);
+        var handler = CrearHandlerNotaCredito(repo);
+
+        var resultado = await handler.Handle(
+            new EmitirNotaCreditoCommand(factura.Id, ModoNotaCredito.Anulacion, []),
+            CancellationToken.None);
+
+        Assert.True(resultado.IsError);
+        Assert.Contains(resultado.Errors, e => e.Code == DocumentoVentaErrors.NotaCreditoSobreFacturaConAbonosActivos.Code);
+        Assert.Empty(repo.Guardados);
+    }
+
+    [Fact]
+    public async Task EmitirNotaCredito_DebePermitirFacturaCreditoSinAbonosActivos()
+    {
+        var factura = DominioHelper.CrearFacturaCreditoEmitida(CajaId);
+        var producto = DominioHelper.CrearProducto(1000m);
+        var abono = factura.RegistrarAbonoCredito(
+            "CRC",
+            1m,
+            "01",
+            "Efectivo",
+            200m,
+            200m,
+            200m,
+            0m,
+            0m,
+            DominioHelper.FechaDocumento.AddHours(1),
+            DominioHelper.FechaDocumento.AddHours(1),
+            DominioHelper.FechaDocumento.AddHours(1),
+            Guid.NewGuid(),
+            null,
+            null).Value;
+        factura.AnularAbono(abono.Id, Guid.NewGuid(), "Reversa previa", DominioHelper.FechaDocumento.AddHours(2));
+
+        var repo = new FakeDocumentoVentaRepository(detalle: factura);
+        var handler = CrearHandlerNotaCredito(repo, producto);
+
+        var resultado = await handler.Handle(
+            new EmitirNotaCreditoCommand(factura.Id, ModoNotaCredito.Anulacion, []),
+            CancellationToken.None);
+
+        Assert.False(resultado.IsError);
+        Assert.Single(repo.Guardados);
+        Assert.Equal(TipoDocumentoVenta.NotaCredito, repo.Guardados[0].TipoDocumento);
+    }
+
+    [Fact]
+    public async Task EmitirNotaDebito_DebeBloquearFacturaCredito()
+    {
+        var factura = DominioHelper.CrearFacturaCreditoEmitida(CajaId);
+        var repo = new FakeDocumentoVentaRepository(detalle: factura);
+        var handler = CrearHandlerNotaDebito(repo);
+
+        var resultado = await handler.Handle(
+            new EmitirNotaDebitoCommand(factura.Id, []),
+            CancellationToken.None);
+
+        Assert.True(resultado.IsError);
+        Assert.Contains(resultado.Errors, e => e.Code == DocumentoVentaErrors.NotaDebitoSobreFacturaCredito.Code);
+        Assert.Empty(repo.Guardados);
+    }
+
+    [Fact]
+    public async Task EmitirNotaDebito_DebePermitirFacturaContado()
+    {
+        var factura = DominioHelper.CrearFacturaEmitida(CajaId);
+        var producto = DominioHelper.CrearProducto(150m);
+        var repo = new FakeDocumentoVentaRepository(detalle: factura);
+        var handler = CrearHandlerNotaDebito(repo, producto);
+
+        var resultado = await handler.Handle(
+            new EmitirNotaDebitoCommand(
+                factura.Id,
+                [
+                    new DocumentoVentaLineaCommand(
+                        producto.Id,
+                        1m,
+                        PrecioUnitario: 150m,
+                        MontoDescuento: 0m,
+                        Descripcion: "Cargo adicional")
+                ]),
+            CancellationToken.None);
+
+        Assert.False(resultado.IsError);
+        Assert.Single(repo.Guardados);
+        Assert.Equal(TipoDocumentoVenta.NotaDebito, repo.Guardados[0].TipoDocumento);
+    }
+
+    private static EmitirNotaCreditoHandler CrearHandlerNotaCredito(
+        FakeDocumentoVentaRepository repo,
+        params Producto[] productos)
+        => new(
+            new FakeUsuarioActualVentas(),
+            new FakeFechaActual(),
+            repo,
+            new FakeSecuenciaRepository(),
+            new FakeProductoRepository(productos),
+            new FakeTarifaRepository(),
+            new FakeDocumentoVentaEventoService(),
+            new FakeMovimientoStockRepository());
+
+    private static EmitirNotaDebitoHandler CrearHandlerNotaDebito(
+        FakeDocumentoVentaRepository repo,
+        params Producto[] productos)
+        => new(
+            repo,
+            new FakeSecuenciaRepository(),
+            new FakeProductoRepository(productos),
+            new FakeTarifaRepository(),
+            new FakeDocumentoVentaEventoService());
+}

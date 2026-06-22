@@ -1,0 +1,40 @@
+{
+  "name": "puntoventa-lite-desktop",
+  "version": "1.1.0",
+  "private": true,
+  "description": "PuntoVenta Desktop (Electron wrapping Next.js)",
+  "author": {
+    "name": "PuntoVenta",
+    "email": "soporte@puntoventa.com"
+  },
+  "main": "dist/main.js",
+  "scripts": {
+    "build:main": "tsc -p tsconfig.json",
+    "publish:api": "node scripts/publish-api.mjs",
+    "build:api": "dotnet build ../PuntoVenta.API/PuntoVenta.API.csproj -c Debug --nologo",
+    "clean:build": "dotnet clean ../PuntoVenta.API/PuntoVenta.API.csproj --nologo",
+    "clean:api": "node scripts/clean-api.mjs",
+    "dev": "pnpm build:api && pnpm build:main && node scripts/start-electron.mjs",
+    "build:next": "cd ../PuntoVenta.Web && cross-env DESKTOP_BUILD=true NODE_OPTIONS=\"--max-old-space-size=4096\" NEXT_TELEMETRY_DISABLED=1 SESSION_SECRET=placeholder-solo-para-build-32chars pnpm build",
+    "build": "pnpm publish:api && pnpm build:next && pnpm build:main && node scripts/stage-next.mjs",
+    "pack": "pnpm build && electron-builder --dir",
+    "dist": "pnpm build && electron-builder",
+    "dist:mac": "pnpm build && electron-builder --mac",
+    "dist:win": "cross-env TARGET_RID=win-x64 pnpm build && electron-builder --win --x64",
+    "smoke": "node scripts/smoke.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "iconv-lite": "0.7.2",
+    "serialport": "13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "25.9.3",
+    "cross-env": "10.1.0",
+    "electron": "42.4.0",
+    "electron-builder": "26.15.3",
+    "typescript": "6.0.3",
+    "vite": "8.0.16",
+    "vitest": "4.1.9"
+  }
+}

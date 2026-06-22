@@ -1,0 +1,24 @@
+{
+  "_comment": "server-auth-actions: falso positivo en esta arquitectura. La auth NO va inline en cada server action; se aplica en capas: proxy.ts (middleware por cookie PVID), (root)/layout.tsx (chequeo server-side), apiClient (Bearer token de iron-session) y RBAC del backend .NET via JWT. Por eso la regla se apaga.",
+  "_comment_selects_async": "Los selects async (ProductoSelect, ClienteFacturaSelect, ProductoFacturaSelect) son comboboxes searchable cuyo searchValue es dual: el texto que teclea el usuario y el label del item seleccionado, que sólo está disponible tras un fetch async — no se puede derivar en render. El efecto además hidrata al padre con el objeto completo cuando un value pre-seleccionado resuelve (el padre sólo tiene el id). Patrón legítimo de combobox async, no refactorizable sin lift de la query a cada padre.",
+  "rules": {
+    "react-doctor/server-auth-actions": "off"
+  },
+  "ignore": {
+    "overrides": [
+      {
+        "files": [
+          "**/ProductoSelect.tsx",
+          "**/ClienteFacturaSelect.tsx",
+          "**/ProductoFacturaSelect.tsx"
+        ],
+        "rules": [
+          "react-doctor/no-adjust-state-on-prop-change",
+          "react-doctor/no-derived-state",
+          "react-doctor/no-event-handler",
+          "react-doctor/no-pass-data-to-parent"
+        ]
+      }
+    ]
+  }
+}

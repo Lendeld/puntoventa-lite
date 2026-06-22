@@ -1,0 +1,199 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+    # Sin paths-ignore a nivel de trigger: el check "CI success" es required en branch
+    # protection, y si el workflow se salta nunca reporta -> PR bloqueado permanente.
+    # El filtrado por ruta ya se hace dentro (job `changes` + dorny/paths-filter), que
+    # saltea backend/frontend cuando no aplican; `ci-success` trata skipped como OK.
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detectar cambios
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d  # v4.0.1
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'src/PuntoVenta.API/**'
+              - 'src/PuntoVenta.Application/**'
+              - 'src/PuntoVenta.Domain/**'
+              - 'src/PuntoVenta.Infrastructure/**'
+              - 'tests/**'
+              - 'PuntoVenta.sln'
+              - '**/*.csproj'
+              - '.config/**'
+              - 'Directory.Build.props'
+              - 'Directory.Packages.props'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'src/PuntoVenta.Web/**'
+              - '.github/workflows/ci.yml'
+            desktop:
+              - 'src/PuntoVenta.Desktop/**'
+              - '.github/workflows/ci.yml'
+
+  backend:
+    name: Backend (.NET)
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore PuntoVenta.sln
+      - name: Build
+        run: dotnet build PuntoVenta.sln --no-restore --nologo -c Release
+      - name: Test
+        run: dotnet test PuntoVenta.sln --no-build --nologo -c Release
+
+  frontend:
+    name: Frontend (Next.js)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/PuntoVenta.Web
+    steps:
+      - uses: actions/checkout@v6
+      - name: Enable corepack
+        run: corepack enable
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/PuntoVenta.Web/pnpm-lock.yaml
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+      - name: Test
+        run: pnpm test:run
+      - name: Build
+        run: pnpm build
+        env:
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET || '12345678901234567890123456789012' }}
+
+  desktop:
+    name: Desktop (Electron)
+    needs: changes
+    if: needs.changes.outputs.desktop == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/PuntoVenta.Desktop
+    steps:
+      - uses: actions/checkout@v6
+      - name: Enable corepack
+        run: corepack enable
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/PuntoVenta.Desktop/pnpm-lock.yaml
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Type check / build main
+        run: pnpm build:main
+      - name: Test
+        run: pnpm test
+
+  secrets-scan:
+    name: Secrets (Gitleaks)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e  # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sast-semgrep:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v6
+      - name: Semgrep scan
+        run: |
+          semgrep ci \
+            --config p/default \
+            --config p/owasp-top-ten \
+            --config p/csharp \
+            --config p/react \
+            --config p/typescript \
+            --config p/secrets \
+            --exclude 'src/PuntoVenta.Web/node_modules' \
+            --exclude '**/bin/**' \
+            --exclude '**/obj/**' \
+            --exclude '**/Migrations/**'
+
+  # Gate único para branch protection. Pasa si los jobs que corrieron
+  # tuvieron éxito y los skippeados quedaron como skipped (no fail).
+  ci-success:
+    name: CI success
+    if: always()
+    needs: [changes, backend, frontend, desktop, secrets-scan, sast-semgrep]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar resultados
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          DESKTOP_RESULT: ${{ needs.desktop.result }}
+          SECRETS_RESULT: ${{ needs.secrets-scan.result }}
+          SAST_RESULT: ${{ needs.sast-semgrep.result }}
+        run: |
+          status=0
+          gate() {
+            local name="$1" result="$2" expected="$3"
+            case "$expected" in
+              required)
+                if [ "$result" != "success" ]; then
+                  echo "::error::$name resultado=$result (debe ser success)"
+                  status=1
+                fi
+                ;;
+              optional)
+                if [ "$result" = "failure" ]; then
+                  echo "::error::$name resultado=$result"
+                  status=1
+                fi
+                ;;
+            esac
+          }
+          gate changes "$CHANGES_RESULT" required
+          gate backend "$BACKEND_RESULT" optional
+          gate frontend "$FRONTEND_RESULT" optional
+          gate desktop "$DESKTOP_RESULT" optional
+          gate secrets-scan "$SECRETS_RESULT" required
+          gate sast-semgrep "$SAST_RESULT" required
+          if [ $status -eq 0 ]; then echo "Todos los jobs aplicables pasaron."; fi
+          exit $status
