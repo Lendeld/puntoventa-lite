@@ -55,7 +55,8 @@ public sealed class DomainEventsIntegrationTests
                 Codigo = $"EVT-{Guid.NewGuid():N}"[..15],
                 Nombre = "Producto evento test",
                 TipoItem = 1, // Bien
-                PrecioUnitario = 1500m
+                PrecioUnitario = 1500m,
+                ExistenciaInicial = 1000m
             }, TestContext.Current.CancellationToken);
             productoResp.EnsureSuccessStatusCode();
             var productoId = await productoResp.Content.ReadFromJsonAsync<Guid>(TestContext.Current.CancellationToken);

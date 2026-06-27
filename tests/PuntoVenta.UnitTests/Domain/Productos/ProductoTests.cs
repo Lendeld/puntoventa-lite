@@ -192,6 +192,60 @@ public class ProductoTests
     }
 
     // ──────────────────────────────────────────────
+    // ValidarStockDisponible
+    // ──────────────────────────────────────────────
+
+    [Fact]
+    public void ValidarStockDisponible_RetornaSuccess_CuandoFlagNoAplicaExistenciasActivo()
+    {
+        // NoAplicaExistencias=true: siempre Success aunque cantidad > existencia (existencia 0)
+        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItem.Bien, PrecioValido,
+            noAplicaExistencias: true).Value;
+
+        var resultado = producto.ValidarStockDisponible(999m);
+
+        Assert.False(resultado.IsError);
+    }
+
+    [Fact]
+    public void ValidarStockDisponible_RetornaSuccess_CuandoCantidadMenorQueExistencia()
+    {
+        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido).Value;
+        producto.AplicarMovimientoStock(10m); // existencia = 10
+
+        var resultado = producto.ValidarStockDisponible(9m);
+
+        Assert.False(resultado.IsError);
+    }
+
+    [Fact]
+    public void ValidarStockDisponible_RetornaSuccess_CuandoCantidadIgualAExistencia()
+    {
+        // cantidad == existencia debe permitirse (queda en 0)
+        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido).Value;
+        producto.AplicarMovimientoStock(5m); // existencia = 5
+
+        var resultado = producto.ValidarStockDisponible(5m);
+
+        Assert.False(resultado.IsError);
+    }
+
+    [Fact]
+    public void ValidarStockDisponible_RetornaError_CuandoCantidadMayorQueExistencia()
+    {
+        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido).Value;
+        producto.AplicarMovimientoStock(5m); // existencia = 5
+
+        var resultado = producto.ValidarStockDisponible(6m);
+
+        Assert.True(resultado.IsError);
+        Assert.Contains(resultado.Errors, e => e.Code.StartsWith("Producto_StockInsuficiente_"));
+        Assert.Contains(resultado.Errors, e => e.Description.Contains(CodigoValido));
+        // Stock insuficiente es condición contemplada → advertencia, no error (se muestra como warning en UI)
+        Assert.Equal("warning", resultado.Errors[0].Metadata?["severity"]);
+    }
+
+    // ──────────────────────────────────────────────
     // Actualizar
     // ──────────────────────────────────────────────
 
