@@ -10,6 +10,7 @@ public sealed record ConvertirApartadoAFacturaCommand(Guid Id, Guid? CajaId = nu
 public sealed class ConvertirApartadoAFacturaHandler(
     IUsuarioActual usuarioActual,
     IFechaActual fechaActual,
+    IUnitOfWork unitOfWork,
     IDocumentoVentaRepository documentoRepository,
     ISecuenciaRepository secuenciaRepository,
     INegocioRepository negocioRepository,
@@ -19,6 +20,7 @@ public sealed class ConvertirApartadoAFacturaHandler(
 {
     private readonly IUsuarioActual _usuarioActual = usuarioActual;
     private readonly IFechaActual _fechaActual = fechaActual;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IDocumentoVentaRepository _documentoRepository = documentoRepository;
     private readonly ISecuenciaRepository _secuenciaRepository = secuenciaRepository;
     private readonly INegocioRepository _negocioRepository = negocioRepository;
@@ -48,12 +50,15 @@ public sealed class ConvertirApartadoAFacturaHandler(
         var negocio = await _negocioRepository.ObtenerAsync(cancellationToken);
         Guid? cajaId = negocio?.AplicaCajas == true ? command.CajaId : null;
 
+        await using var tx = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
         var consecutivo = await VentasHandlerHelpers.SiguienteConsecutivoAsync(
             TipoDocumentoVenta.Factura,
             _secuenciaRepository,
             cancellationToken);
         if (consecutivo.IsError)
         {
+            await tx.RollbackAsync(cancellationToken);
             return consecutivo.Errors;
         }
 
@@ -162,7 +167,7 @@ public sealed class ConvertirApartadoAFacturaHandler(
             },
             correlacionId: correlacionId,
             cancellationToken: cancellationToken);
-        await VentasHandlerHelpers.AplicarMovimientosStockAsync(
+        var stock = await VentasHandlerHelpers.AplicarMovimientosStockAsync(
             factura.Value.Lineas,
             factura.Value,
             deltaEsNegativo: true,
@@ -171,9 +176,15 @@ public sealed class ConvertirApartadoAFacturaHandler(
             _fechaActual.AhoraUtc,
             _usuarioActual.UsuarioId,
             cancellationToken);
+        if (stock.IsError)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return stock.Errors;
+        }
 
         await _documentoRepository.AddAsync(factura.Value, cancellationToken);
         await _documentoRepository.UpdateAsync(apartado, cancellationToken);
+        await tx.CommitAsync(cancellationToken);
         return factura.Value.Id;
     }
 

@@ -158,7 +158,7 @@ public sealed class CrearFacturaHandler(
             },
             cancellationToken: cancellationToken);
 
-        await VentasHandlerHelpers.AplicarMovimientosStockAsync(
+        var stock = await VentasHandlerHelpers.AplicarMovimientosStockAsync(
             documento.Lineas,
             documento,
             deltaEsNegativo: true,
@@ -167,6 +167,11 @@ public sealed class CrearFacturaHandler(
             _fechaActual.AhoraUtc,
             _usuarioActual.UsuarioId,
             cancellationToken);
+        if (stock.IsError)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return stock.Errors;
+        }
 
         await _documentoRepository.UpdateAsync(documento, cancellationToken);
 

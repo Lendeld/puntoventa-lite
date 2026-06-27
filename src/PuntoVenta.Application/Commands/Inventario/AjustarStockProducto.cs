@@ -30,6 +30,13 @@ public sealed class AjustarStockProductoHandler(
         if (producto is null)
             return MovimientoStockErrors.ProductoNoEncontrado;
 
+        if (command.Delta < 0)
+        {
+            var validacion = producto.ValidarStockDisponible(-command.Delta);
+            if (validacion.IsError)
+                return validacion.Errors;
+        }
+
         var saldoResultante = producto.AplicarMovimientoStock(command.Delta);
 
         var movimiento = MovimientoStock.Crear(
