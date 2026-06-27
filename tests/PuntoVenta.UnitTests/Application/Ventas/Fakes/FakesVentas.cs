@@ -1,4 +1,5 @@
 using ErrorOr;
+using PuntoVenta.Application.DTOs.Inventarios;
 using PuntoVenta.Application.Interfaces;
 using PuntoVenta.Application.Commands.Ventas;
 using PuntoVenta.Application.DTOs.Ventas;
@@ -477,6 +478,10 @@ internal sealed class FakeProductoRepository : IProductoRepository
         int pagina, int tamano, string? filtroDinamico, TipoItem? tipoItem, Guid? categoriaId,
         CancellationToken cancellationToken = default)
         => Task.FromResult<(IReadOnlyList<Producto>, int)>(([], 0));
+
+    public Task<IReadOnlyList<InventarioReporteProyeccionDto>> ObtenerReporteInventarioProyectadoAsync(
+        string? codigo, Guid? categoriaId, int maxFilas, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<InventarioReporteProyeccionDto>>([]);
 
     public Task<IReadOnlyList<Producto>> GetAllAsync(CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<Producto>>(_productos);
