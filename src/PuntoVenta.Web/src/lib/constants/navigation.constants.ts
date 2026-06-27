@@ -64,6 +64,11 @@ export const NAVIGATION_MENU = [
                 href: '/reportes-ventas',
                 icon: 'IconReportAnalytics',
             },
+            {
+                label: 'Reportes Inventario',
+                href: '/reportes-inventario',
+                icon: 'IconReportSearch',
+            },
         ],
     },
     {

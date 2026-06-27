@@ -178,6 +178,10 @@ public class CrearProductoHandlerTests
             int pagina, int tamano, string? filtroDinamico, TipoItem? tipoItem, Guid? categoriaId, CancellationToken cancellationToken = default)
             => Task.FromResult<(IReadOnlyList<Producto>, int)>(([], 0));
 
+        public Task<IReadOnlyList<PuntoVenta.Application.DTOs.Inventarios.InventarioReporteProyeccionDto>> ObtenerReporteInventarioProyectadoAsync(
+            string? codigo, Guid? categoriaId, int maxFilas, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<PuntoVenta.Application.DTOs.Inventarios.InventarioReporteProyeccionDto>>([]);
+
         public Task<Producto> AddAsync(Producto entity, CancellationToken cancellationToken = default)
         {
             Guardados.Add(entity);

@@ -25,6 +25,8 @@ public static partial class DataSeeder
         public const string CuentasPorCobrar = "Cuentas por Cobrar";
         public const string Reportes = "Reportes Ventas";
         public const string ReporteVentasRango = "Reporte de ventas por rango";
+        public const string ReportesInventario = "Reportes Inventario";
+        public const string ReporteExistencias = "Existencias";
     }
 
     public static async Task SembrarPermisosAsync(ApplicationDbContext context)
@@ -95,6 +97,7 @@ public static partial class DataSeeder
             (PermisosRegistrar.Claves.ProductosMovimientosVer, "Ver movimientos de stock", "productos"),
             (PermisosRegistrar.Claves.ReportesVer, "Ver módulo de reportes", "reportes"),
             (PermisosRegistrar.Claves.ReportesVentasRangoVer, "Ver reporte de ventas por rango", "reportes"),
+            (PermisosRegistrar.Claves.ReportesInventarioVer, "Ver reporte de inventario", "reportes"),
             (PermisosRegistrar.Claves.DashboardVer, "Ver panel principal", "dashboard"),
             (PermisosRegistrar.Claves.BackupAdministrar, "Administrar respaldo de la base de datos", "backup"),
         };
@@ -339,6 +342,16 @@ public static partial class DataSeeder
         }
 
         await CargarPaginaReporteVentasRangoAsync(context, paginaReportes.Id);
+
+        var paginaReportesInventario = await context.Paginas.FirstOrDefaultAsync(p => p.Nombre == NombresPaginas.ReportesInventario);
+        if (paginaReportesInventario == null)
+        {
+            paginaReportesInventario = Pagina.Crear(NombresPaginas.ReportesInventario, "/reportes-inventario", orden: 7, icono: "report-search").Value;
+            await context.Paginas.AddAsync(paginaReportesInventario);
+            await context.SaveChangesAsync();
+        }
+
+        await CargarPaginaReporteExistenciasAsync(context, paginaReportesInventario.Id);
     }
 
     public static async Task SembrarPermisosPaginaAsync(ApplicationDbContext context)
@@ -486,6 +499,17 @@ public static partial class DataSeeder
             context.Entry(pagina).Property(nameof(Pagina.Ruta)).CurrentValue = "/reportes-ventas/ventas-rango";
         }
         await context.SaveChangesAsync();
+    }
+
+    private static async Task CargarPaginaReporteExistenciasAsync(ApplicationDbContext context, Guid paginaReportesInventarioId)
+    {
+        var pagina = await context.Paginas.FirstOrDefaultAsync(p => p.Nombre == NombresPaginas.ReporteExistencias && p.PaginaPadreId == paginaReportesInventarioId);
+        if (pagina == null)
+        {
+            pagina = Pagina.Crear(NombresPaginas.ReporteExistencias, "/reportes-inventario/existencias", orden: 1, icono: "report-money", paginaPadreId: paginaReportesInventarioId).Value;
+            await context.Paginas.AddAsync(pagina);
+            await context.SaveChangesAsync();
+        }
     }
 
     #endregion

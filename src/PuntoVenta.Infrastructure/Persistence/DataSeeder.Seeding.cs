@@ -158,6 +158,14 @@ public static partial class DataSeeder
         await AsociarPermisosAPaginaAsync(context, NombresPaginas.ReporteVentasRango, [
             PermisosRegistrar.Claves.ReportesVentasRangoVer
         ]);
+
+        await AsociarPermisosAPaginaAsync(context, NombresPaginas.ReportesInventario, [
+            PermisosRegistrar.Claves.ReportesVer
+        ]);
+
+        await AsociarPermisosAPaginaAsync(context, NombresPaginas.ReporteExistencias, [
+            PermisosRegistrar.Claves.ReportesInventarioVer
+        ]);
     }
 
     private static async Task PermisosRespaldoAsync(ApplicationDbContext context)
