@@ -197,8 +197,8 @@ public sealed class EmitirNotaCreditoHandler(
             correlacionId: correlacionId,
             cancellationToken: cancellationToken);
 
-        // Reintegro de inventario para líneas con DevuelveInventario=true
-        await VentasHandlerHelpers.AplicarMovimientosStockAsync(
+        // Reintegro de inventario para líneas con DevuelveInventario=true (ingreso, no valida stock).
+        var stock = await VentasHandlerHelpers.AplicarMovimientosStockAsync(
             nota.Value.Lineas,
             nota.Value,
             deltaEsNegativo: false,
@@ -207,6 +207,8 @@ public sealed class EmitirNotaCreditoHandler(
             _fechaActual.AhoraUtc,
             _usuarioActual.UsuarioId,
             cancellationToken);
+        if (stock.IsError)
+            return stock.Errors;
 
         await _documentoRepository.AddAsync(nota.Value, cancellationToken);
         return nota.Value.Id;

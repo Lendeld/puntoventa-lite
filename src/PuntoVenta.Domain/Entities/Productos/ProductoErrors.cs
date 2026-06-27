@@ -45,4 +45,10 @@ public static class ProductoErrors
 
     public static Error NoEncontrado =>
         Error.NotFound("Producto_NoEncontrado", "El producto no existe.");
+
+    public static Error StockInsuficiente(Guid id, string codigo, string descripcion, decimal disponible, decimal solicitada) =>
+        Error.Validation(
+            $"Producto_StockInsuficiente_{id}",
+            $"Stock insuficiente para {codigo} - {descripcion}: disponible {disponible}, solicitado {solicitada}.",
+            new Dictionary<string, object> { ["severity"] = "warning" });
 }

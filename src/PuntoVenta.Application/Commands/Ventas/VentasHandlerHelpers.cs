@@ -242,11 +242,11 @@ internal static partial class VentasHandlerHelpers
 
     /// <summary>
     /// Aplica movimientos de stock para las líneas del documento.
-    /// Para ventas (deltaEsNegativo=true) descuenta stock; para NC con DevuelveInventario=true lo reintegra.
+    /// Para ventas (deltaEsNegativo=true) valida stock, descuenta y retorna Success o errores de faltante.
+    /// Para NC con DevuelveInventario=true reintegra sin validar (ingreso legítimo).
     /// Ignora líneas sin ProductoId o con NoAplicaExistencias.
-    /// No bloquea la operación si el stock queda negativo.
     /// </summary>
-    public static async Task AplicarMovimientosStockAsync(
+    public static async Task<ErrorOr<Success>> AplicarMovimientosStockAsync(
         IReadOnlyCollection<DocumentoVentaLinea> lineas,
         DocumentoVenta documento,
         bool deltaEsNegativo,
@@ -263,11 +263,32 @@ internal static partial class VentasHandlerHelpers
             .Distinct()
             .ToList();
 
-        if (idsConStock.Count == 0) return;
+        if (idsConStock.Count == 0) return Result.Success;
 
         var productosEditables = await productoRepository.ObtenerPorIdsEditablesAsync(idsConStock, cancellationToken);
         var mapProductos = productosEditables.ToDictionary(p => p.Id);
         var movimientos = new List<MovimientoStock>();
+
+        // Para ventas (salidas): validar la suma por producto antes de descontar nada.
+        if (deltaEsNegativo)
+        {
+            var sumasPorProducto = lineas
+                .Where(l => l.ProductoId.HasValue && !l.NoAplicaExistencias)
+                .GroupBy(l => l.ProductoId!.Value)
+                .Select(g => (ProductoId: g.Key, Total: g.Sum(l => l.Cantidad)));
+
+            var faltantes = new List<Error>();
+            foreach (var (productoId, total) in sumasPorProducto)
+            {
+                if (!mapProductos.TryGetValue(productoId, out var prod)) continue;
+                var validacion = prod.ValidarStockDisponible(total);
+                if (validacion.IsError)
+                    faltantes.AddRange(validacion.Errors);
+            }
+
+            if (faltantes.Count > 0)
+                return faltantes;
+        }
 
         foreach (var linea in lineas)
         {
@@ -295,6 +316,7 @@ internal static partial class VentasHandlerHelpers
         // Agrega movimientos al contexto sin guardar; los productos ya están tracked (Modified).
         // El SaveChangesAsync del documento que sigue persiste todo en bloque.
         await movimientoRepository.AgregarRangoSinPersistirAsync(movimientos, cancellationToken);
+        return Result.Success;
     }
 
     public static string ResolverTipoDocReferencia(TipoDocumentoVenta tipo) => tipo switch

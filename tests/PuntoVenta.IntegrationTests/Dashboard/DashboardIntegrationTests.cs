@@ -85,7 +85,8 @@ public sealed class DashboardIntegrationTests
             Codigo = codigo,
             Nombre = $"Producto {codigo}",
             TipoItem = 1,
-            PrecioUnitario = precio
+            PrecioUnitario = precio,
+            ExistenciaInicial = 1000m
         }, TestContext.Current.CancellationToken);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<Guid>(TestContext.Current.CancellationToken);

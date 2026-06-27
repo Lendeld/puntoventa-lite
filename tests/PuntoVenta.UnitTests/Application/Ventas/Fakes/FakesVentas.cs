@@ -114,6 +114,29 @@ internal static class DominioHelper
         return doc;
     }
 
+    public static DocumentoVenta CrearApartadoReservadoConProducto(Guid cajaId, PuntoVenta.Domain.Entities.Productos.Producto producto)
+    {
+        var doc = DocumentoVenta.Crear(
+            TipoDocumentoVenta.Apartado,
+            null, null,
+            "01", "Contado",
+            FechaDocumento,
+            "CRC", 1m,
+            fechaVencimiento: FechaDocumento.AddDays(30)).Value;
+        doc.AgregarLinea(
+            producto.Id,
+            producto.TipoItem,
+            producto.Codigo,
+            producto.Nombre,
+            "Unid",
+            1m,
+            producto.PrecioUnitario,
+            noAplicaExistencias: producto.NoAplicaExistencias);
+        AgregarPagoEfectivo(doc, monto: producto.PrecioUnitario);
+        doc.ConfirmarApartado(0, cajaId, "APA-000002");
+        return doc;
+    }
+
     public static DocumentoVenta CrearProformaBorrador(Guid cajaId)
     {
         var doc = DocumentoVenta.Crear(
@@ -627,6 +650,37 @@ internal sealed class FakeMovimientoStockRepository : IMovimientoStockRepository
     public Task<(IReadOnlyList<(MovimientoStock Movimiento, string NombreProducto)> Items, int Total)> ObtenerPaginadoAsync(
         Guid? productoId, int pagina, int tamano, CancellationToken cancellationToken = default)
         => Task.FromResult<(IReadOnlyList<(MovimientoStock, string)>, int)>(([], 0));
+}
+
+internal sealed class FakeTransactionScope : ITransactionScope
+{
+    public bool Committed { get; private set; }
+    public bool RolledBack { get; private set; }
+
+    public Task CommitAsync(CancellationToken cancellationToken = default)
+    {
+        Committed = true;
+        return Task.CompletedTask;
+    }
+
+    public Task RollbackAsync(CancellationToken cancellationToken = default)
+    {
+        RolledBack = true;
+        return Task.CompletedTask;
+    }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+internal sealed class FakeUnitOfWork : IUnitOfWork
+{
+    public FakeTransactionScope LastTransaction { get; private set; } = new();
+
+    public Task<ITransactionScope> BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        LastTransaction = new FakeTransactionScope();
+        return Task.FromResult<ITransactionScope>(LastTransaction);
+    }
 }
 
 internal sealed class FakeVendedorRepositoryVentas : IVendedorRepository

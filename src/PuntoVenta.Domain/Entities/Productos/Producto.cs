@@ -109,8 +109,21 @@ public sealed class Producto : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Valida que hay stock suficiente para una salida. No muta estado.
+    /// Si NoAplicaExistencias es true, siempre devuelve Success (servicios / sin control de stock).
+    /// </summary>
+    public ErrorOr<Success> ValidarStockDisponible(decimal cantidadSolicitada)
+    {
+        if (NoAplicaExistencias)
+            return Result.Success;
+        if (cantidadSolicitada <= Existencia)
+            return Result.Success;
+        return ProductoErrors.StockInsuficiente(Id, Codigo, Nombre, Existencia, cantidadSolicitada);
+    }
+
+    /// <summary>
     /// Aplica un delta al stock (positivo = ingreso, negativo = salida).
-    /// Puede quedar en negativo — la venta nunca se bloquea por stock.
+    /// Llamar ValidarStockDisponible antes de invocar para salidas de inventario.
     /// </summary>
     public decimal AplicarMovimientoStock(decimal delta)
     {
