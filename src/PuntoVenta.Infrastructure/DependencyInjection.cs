@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddSingleton<IDocumentoVentaPdfService, QuestPdfDocumentoVentaService>();
         services.AddSingleton<IReporteMovimientosDineroPdfService, QuestPdfReporteMovimientosDineroService>();
         services.AddSingleton<IReporteVentasExcelService, ClosedXmlReporteVentasService>();
+        services.AddSingleton<IReporteInventarioExcelService, ClosedXmlReporteInventarioService>();
 
         // Repositorios
         services.AddScoped<ICajaRepository, CajaRepository>();

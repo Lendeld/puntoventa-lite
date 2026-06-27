@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using PuntoVenta.Application.DTOs.Inventarios;
 using PuntoVenta.Application.Interfaces;
+using PuntoVenta.Domain.Entities.Categorias;
 using PuntoVenta.Domain.Entities.Productos;
+using PuntoVenta.Domain.Entities.TarifasIvaImpuesto;
 
 namespace PuntoVenta.Infrastructure.Persistence.Repositories;
 
@@ -66,5 +69,50 @@ public sealed class ProductoRepository(ApplicationDbContext context) : Repositor
             .ToListAsync(cancellationToken);
 
         return (items, total);
+    }
+
+    public async Task<IReadOnlyList<InventarioReporteProyeccionDto>> ObtenerReporteInventarioProyectadoAsync(
+        string? codigo,
+        Guid? categoriaId,
+        int maxFilas,
+        CancellationToken cancellationToken = default)
+    {
+        // Universo fijo: Bienes activos que manejan existencia.
+        var query = DbSet.AsNoTracking()
+            .Where(p => p.TipoItem == TipoItem.Bien && !p.NoAplicaExistencias && p.Activo);
+
+        if (!string.IsNullOrWhiteSpace(codigo))
+        {
+            var term = codigo.Trim().ToLower();
+            query = query.Where(p => p.Codigo.ToLower().Contains(term));
+        }
+
+        if (categoriaId.HasValue)
+            query = query.Where(p => p.CategoriaId == categoriaId.Value);
+
+        // Lite es single-tenant: las subconsultas NO llevan filtro de tenant.
+        return await query
+            .OrderBy(p => p.Codigo)
+            .Take(maxFilas + 1)
+            .Select(p => new InventarioReporteProyeccionDto
+            {
+                ProductoId = p.Id,
+                Codigo = p.Codigo,
+                Nombre = p.Nombre,
+                Descripcion = p.Descripcion,
+                Categoria = Context.Set<Categoria>()
+                    .Where(c => c.Id == p.CategoriaId)
+                    .Select(c => c.Nombre)
+                    .FirstOrDefault(),
+                FechaCreacion = p.FechaCreacion,
+                Existencia = p.Existencia,
+                PrecioUnitario = p.PrecioUnitario,
+                PrecioCosto = p.PrecioCosto,
+                TarifaPorcentaje = Context.Set<TarifaIvaImpuesto>()
+                    .Where(t => t.Codigo == p.TarifaIvaImpuestoCodigo)
+                    .Select(t => (decimal?)t.Porcentaje)
+                    .FirstOrDefault() ?? 0m,
+            })
+            .ToListAsync(cancellationToken);
     }
 }

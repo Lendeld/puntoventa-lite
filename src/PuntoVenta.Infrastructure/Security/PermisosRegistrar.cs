@@ -123,6 +123,7 @@ public static class PermisosRegistrar
         // Módulo: reportes
         public const string ReportesVer = "reportes:ver";
         public const string ReportesVentasRangoVer = "reportes:ventas-rango:ver";
+        public const string ReportesInventarioVer = "reportes:inventario:ver";
 
         // Módulo: dashboard (panel principal)
         public const string DashboardVer = "dashboard:ver";
