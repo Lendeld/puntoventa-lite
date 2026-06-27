@@ -183,11 +183,6 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Smooth transitions globales para color/bg */
-html {
-    scrollbar-gutter: stable;
-}
-
 /* Scrollbar custom warm — Linear/Notion style */
 * {
     scrollbar-width: thin;
