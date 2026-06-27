@@ -133,6 +133,7 @@ export async function startNextDevServer(apiUrl?: string): Promise<string> {
     // EINVAL — CVE-2024-27980 endureció el spawn de .cmd/.bat). El env va por
     // options.env (no por el shell) y los args son estáticos, así que no hay
     // superficie de inyección. En POSIX pnpm es binario y no necesita shell.
+    // nosemgrep: javascript.lang.security.audit.spawn-shell-true.spawn-shell-true -- falso positivo: args estáticos (dev-only, sin input de usuario); shell:true es el workaround documentado para spawnear pnpm.cmd en Windows sin EINVAL (Node >=20.12, ver comentario arriba).
     serverProcess = spawn(pnpmExecutable, ["dev", "--port", String(port)], {
         env: {
             ...process.env,
