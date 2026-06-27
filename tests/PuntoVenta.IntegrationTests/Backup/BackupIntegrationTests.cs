@@ -161,7 +161,7 @@ public sealed class BackupIntegrationTests(IntegrationTestFixture fixture)
         }
         finally
         {
-            if (File.Exists(rutaBackup)) File.Delete(rutaBackup);
+            EliminarArchivoSqlite(rutaBackup);
         }
     }
 
@@ -226,7 +226,7 @@ public sealed class BackupIntegrationTests(IntegrationTestFixture fixture)
         }
         finally
         {
-            if (File.Exists(rutaBackup)) File.Delete(rutaBackup);
+            EliminarArchivoSqlite(rutaBackup);
         }
     }
 
@@ -291,7 +291,7 @@ public sealed class BackupIntegrationTests(IntegrationTestFixture fixture)
         }
         finally
         {
-            if (File.Exists(rutaBackup)) File.Delete(rutaBackup);
+            EliminarArchivoSqlite(rutaBackup);
         }
     }
 
@@ -352,7 +352,7 @@ public sealed class BackupIntegrationTests(IntegrationTestFixture fixture)
         }
         finally
         {
-            if (File.Exists(rutaFalsa)) File.Delete(rutaFalsa);
+            EliminarArchivoSqlite(rutaFalsa);
         }
     }
 
@@ -392,6 +392,26 @@ public sealed class BackupIntegrationTests(IntegrationTestFixture fixture)
         var token = body?.AccessToken ?? throw new InvalidOperationException("Sin AccessToken");
 
         return (token, usuario.Id);
+    }
+
+    // El servidor (en proceso, vía WebApplicationFactory) abre los .db de backup con
+    // Microsoft.Data.Sqlite, que poolea la conexión y retiene el handle del archivo;
+    // en Windows eso bloquea File.Delete con IOException. Cerrar los pools libera el
+    // handle antes de borrar. La BD de test es un archivo en disco (no :memory:), así
+    // que ClearAllPools no la pierde: las conexiones se reabren al siguiente uso.
+    private static void EliminarArchivoSqlite(string ruta)
+    {
+        if (!File.Exists(ruta)) return;
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        try
+        {
+            File.Delete(ruta);
+        }
+        catch (IOException)
+        {
+            // Best-effort: si algo aún lo retiene, el temporal queda en %TEMP%
+            // (lo limpia el SO); no debe hacer fallar el test por la limpieza.
+        }
     }
 
     // ──────────────────────────────────────────────
