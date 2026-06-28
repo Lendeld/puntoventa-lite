@@ -67,6 +67,10 @@ public static partial class DataSeeder
             (PermisosRegistrar.Claves.VendedoresCrear, "Crear vendedores", "vendedores"),
             (PermisosRegistrar.Claves.VendedoresEditar, "Editar vendedores", "vendedores"),
             (PermisosRegistrar.Claves.VendedoresToggle, "Activar/desactivar vendedores", "vendedores"),
+            (PermisosRegistrar.Claves.ProveedoresVer, "Ver listado de proveedores", "proveedores"),
+            (PermisosRegistrar.Claves.ProveedoresCrear, "Crear proveedores", "proveedores"),
+            (PermisosRegistrar.Claves.ProveedoresEditar, "Editar proveedores", "proveedores"),
+            (PermisosRegistrar.Claves.ProveedoresToggle, "Activar/desactivar proveedores", "proveedores"),
             (PermisosRegistrar.Claves.ProductosVer, "Ver listado de productos", "productos"),
             (PermisosRegistrar.Claves.ProductosCrear, "Crear productos", "productos"),
             (PermisosRegistrar.Claves.ProductosEditar, "Editar productos", "productos"),
@@ -298,6 +302,7 @@ public static partial class DataSeeder
 
         await CargarPaginaCategoriasAsync(context, paginaMantenimiento.Id);
         await CargarPaginaVendedoresAsync(context, paginaMantenimiento.Id);
+        await CargarPaginaProveedoresAsync(context, paginaMantenimiento.Id);
 
         var paginaProductos = await context.Paginas.FirstOrDefaultAsync(p => p.Nombre == "Productos");
         if (paginaProductos == null)
@@ -458,6 +463,14 @@ public static partial class DataSeeder
     {
         if (await context.Paginas.AnyAsync(p => p.Nombre == "Vendedores" && p.PaginaPadreId == paginaMantenimientoId)) return;
         var pagina = Pagina.Crear("Vendedores", "/mantenimiento/vendedores", orden: 2, icono: "user-check", paginaPadreId: paginaMantenimientoId).Value;
+        await context.Paginas.AddAsync(pagina);
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task CargarPaginaProveedoresAsync(ApplicationDbContext context, Guid paginaMantenimientoId)
+    {
+        if (await context.Paginas.AnyAsync(p => p.Nombre == "Proveedores" && p.PaginaPadreId == paginaMantenimientoId)) return;
+        var pagina = Pagina.Crear("Proveedores", "/mantenimiento/proveedores", orden: 3, icono: "truck", paginaPadreId: paginaMantenimientoId).Value;
         await context.Paginas.AddAsync(pagina);
         await context.SaveChangesAsync();
     }

@@ -517,6 +517,7 @@ public sealed class VentasFlujosIntegrationTests(IntegrationTestFixture fixture)
             Nombre = $"Producto {codigo}",
             TipoItem = 1, // Bien
             PrecioUnitario = precio,
+            TarifaIvaImpuestoCodigo = "10", // Exenta (0% IVA): mantiene total == subtotal en los flujos
             ExistenciaInicial = 1000m // suficiente para cualquier cantidad de test
         });
         resp.EnsureSuccessStatusCode();
@@ -531,6 +532,7 @@ public sealed class VentasFlujosIntegrationTests(IntegrationTestFixture fixture)
             Nombre = $"Producto {codigo}",
             TipoItem = 1, // Bien
             PrecioUnitario = 1000m,
+            TarifaIvaImpuestoCodigo = "10", // Exenta (0% IVA): mantiene total == subtotal en los flujos
             ExistenciaInicial = existenciaInicial
         }, TestContext.Current.CancellationToken);
         resp.EnsureSuccessStatusCode();

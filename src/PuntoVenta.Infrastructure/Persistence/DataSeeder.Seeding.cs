@@ -105,6 +105,13 @@ public static partial class DataSeeder
             PermisosRegistrar.Claves.VendedoresToggle
         ]);
 
+        await AsociarPermisosAPaginaAsync(context, "Proveedores", [
+            PermisosRegistrar.Claves.ProveedoresVer,
+            PermisosRegistrar.Claves.ProveedoresCrear,
+            PermisosRegistrar.Claves.ProveedoresEditar,
+            PermisosRegistrar.Claves.ProveedoresToggle
+        ]);
+
         await AsociarPermisosAPaginaAsync(context, "Productos", [
             PermisosRegistrar.Claves.ProductosVer,
             PermisosRegistrar.Claves.ProductosCrear,
@@ -315,6 +322,11 @@ public static partial class DataSeeder
         await context.SaveChangesAsync();
     }
 
+    // Solo estas tarifas arrancan activas (las de uso común en CR); el resto se siembra inactivo:
+    // queda disponible en el catálogo pero oculto de los selects. 03=reducida 2%, 04=reducida 4%,
+    // 08=general 13%, 10=Exenta. El usuario puede activar/desactivar el resto desde el mantenimiento.
+    private static readonly HashSet<string> TarifasIvaActivasPorDefecto = ["03", "04", "08", "10"];
+
     public static async Task SembrarTarifasIvaImpuestoAsync(ApplicationDbContext context)
     {
         var codigosExistentes = await context.TarifasIvaImpuesto.Select(t => t.Codigo).ToHashSetAsync();
@@ -323,6 +335,7 @@ public static partial class DataSeeder
         {
             if (codigosExistentes.Contains(codigo)) continue;
             var item = TarifaIvaImpuesto.Crear(codigo, detalle, porcentaje, comentario).Value;
+            if (!TarifasIvaActivasPorDefecto.Contains(codigo)) item.Desactivar();
             await context.TarifasIvaImpuesto.AddAsync(item);
         }
 

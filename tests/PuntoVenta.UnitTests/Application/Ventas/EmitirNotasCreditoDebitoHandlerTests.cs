@@ -129,6 +129,7 @@ public class EmitirNotasCreditoDebitoHandlerTests
         // Producto con existencia 0 (ya sin stock) — el reintegro de NC no valida stock
         // (deltaEsNegativo=false), así que debe completarse sin error.
         var producto = Producto.Crear("P-REI", "Reintegro Test", TipoItem.Bien, 1000m,
+            tarifaIvaImpuestoCodigo: "08",
             noAplicaExistencias: false).Value;
         // existencia queda en 0
 

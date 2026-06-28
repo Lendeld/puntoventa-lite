@@ -23,7 +23,8 @@ public sealed class ProductoCrudIntegrationTests(IntegrationTestFixture fixture)
             Codigo = $"PROD-TEST-{Guid.NewGuid():N}"[..20],
             Nombre = "Producto de Prueba Integration",
             TipoItem = 1, // Bien
-            PrecioUnitario = 1000m
+            PrecioUnitario = 1000m,
+            TarifaIvaImpuestoCodigo = "08"
         }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -48,7 +49,8 @@ public sealed class ProductoCrudIntegrationTests(IntegrationTestFixture fixture)
             Codigo = codigo,
             Nombre = "Producto Para Obtener",
             TipoItem = 1,
-            PrecioUnitario = 2500m
+            PrecioUnitario = 2500m,
+            TarifaIvaImpuestoCodigo = "08"
         }, TestContext.Current.CancellationToken);
         crear.EnsureSuccessStatusCode();
         var id = await crear.Content.ReadFromJsonAsync<Guid>(TestContext.Current.CancellationToken);
@@ -81,7 +83,8 @@ public sealed class ProductoCrudIntegrationTests(IntegrationTestFixture fixture)
             Codigo = codigoOriginal,
             Nombre = "Producto Original",
             TipoItem = 1,
-            PrecioUnitario = 500m
+            PrecioUnitario = 500m,
+            TarifaIvaImpuestoCodigo = "08"
         }, TestContext.Current.CancellationToken);
         crear.EnsureSuccessStatusCode();
         var id = await crear.Content.ReadFromJsonAsync<Guid>(TestContext.Current.CancellationToken);
@@ -92,7 +95,8 @@ public sealed class ProductoCrudIntegrationTests(IntegrationTestFixture fixture)
             Codigo = codigoOriginal,
             Nombre = "Producto Actualizado",
             TipoItem = 1,
-            PrecioUnitario = 750m
+            PrecioUnitario = 750m,
+            TarifaIvaImpuestoCodigo = "08"
         }, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NoContent, editar.StatusCode);
@@ -123,7 +127,8 @@ public sealed class ProductoCrudIntegrationTests(IntegrationTestFixture fixture)
             Codigo = codigoDuplicado,
             Nombre = "Primer Producto",
             TipoItem = 1,
-            PrecioUnitario = 100m
+            PrecioUnitario = 100m,
+            TarifaIvaImpuestoCodigo = "08"
         }, TestContext.Current.CancellationToken);
         primer.EnsureSuccessStatusCode();
 
@@ -133,13 +138,38 @@ public sealed class ProductoCrudIntegrationTests(IntegrationTestFixture fixture)
             Codigo = codigoDuplicado,
             Nombre = "Segundo Producto",
             TipoItem = 1,
-            PrecioUnitario = 200m
+            PrecioUnitario = 200m,
+            TarifaIvaImpuestoCodigo = "08"
         }, TestContext.Current.CancellationToken);
 
         // El endpoint debe rechazar el duplicado con 4xx.
         Assert.True(
             (int)segundo.StatusCode >= 400 && (int)segundo.StatusCode < 500,
             $"Status inesperado al crear producto con código duplicado: {segundo.StatusCode}");
+    }
+
+    // ──────────────────────────────────────────────
+    // Tarifa IVA requerida → 400 con código específico
+    // ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task CrearProducto_Retorna400_CuandoTarifaIvaAusente()
+    {
+        var token = await fixture.ObtenerTokenAdminAsync();
+        var cliente = ConstruirCliente(token);
+
+        var response = await cliente.PostAsJsonAsync("/productos", new
+        {
+            Codigo = $"TV-{Guid.NewGuid():N}"[..15],
+            Nombre = "Producto Sin Tarifa",
+            TipoItem = 1,
+            PrecioUnitario = 500m
+            // TarifaIvaImpuestoCodigo omitido
+        }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Contains("Producto_TarifaIvaImpuestoCodigo", body);
     }
 
     // ──────────────────────────────────────────────

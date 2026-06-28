@@ -20,7 +20,8 @@ public class ProductoTests
     [Fact]
     public void Crear_DebeRetornarProducto_CuandoDatosMinimosValidos()
     {
-        var resultado = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido);
+        var resultado = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08");
 
         Assert.False(resultado.IsError);
         var producto = resultado.Value;
@@ -33,7 +34,7 @@ public class ProductoTests
         Assert.Null(producto.ImagenUrl);
         Assert.Null(producto.PrecioCosto);
         Assert.Null(producto.CategoriaId);
-        Assert.Null(producto.TarifaIvaImpuestoCodigo);
+        Assert.Equal("08", producto.TarifaIvaImpuestoCodigo);
         Assert.False(producto.NoAplicaExistencias);
         Assert.False(producto.PermiteModificarPrecioUnitario);
         Assert.NotEqual(Guid.Empty, producto.Id);
@@ -42,7 +43,8 @@ public class ProductoTests
     [Fact]
     public void Crear_DebeRetornarProducto_CuandoServicioSinExistencias()
     {
-        var resultado = Producto.Crear(CodigoValido, NombreValido, TipoItem.Servicio, PrecioValido);
+        var resultado = Producto.Crear(CodigoValido, NombreValido, TipoItem.Servicio, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08");
 
         Assert.False(resultado.IsError);
         Assert.Equal(TipoItem.Servicio, resultado.Value.TipoItem);
@@ -51,7 +53,8 @@ public class ProductoTests
     [Fact]
     public void Crear_DebeRetornarProducto_CuandoPrecioEsCero()
     {
-        var resultado = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, 0m);
+        var resultado = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, 0m,
+            tarifaIvaImpuestoCodigo: "08");
 
         Assert.False(resultado.IsError);
         Assert.Equal(0m, resultado.Value.PrecioUnitario);
@@ -64,7 +67,8 @@ public class ProductoTests
     [Fact]
     public void Crear_DebeTrimearCodigo()
     {
-        var resultado = Producto.Crear("  P001  ", NombreValido, TipoItemValido, PrecioValido);
+        var resultado = Producto.Crear("  P001  ", NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08");
 
         Assert.False(resultado.IsError);
         Assert.Equal("P001", resultado.Value.Codigo);
@@ -73,7 +77,8 @@ public class ProductoTests
     [Fact]
     public void Crear_DebeTrimearNombre()
     {
-        var resultado = Producto.Crear(CodigoValido, "  Producto  ", TipoItemValido, PrecioValido);
+        var resultado = Producto.Crear(CodigoValido, "  Producto  ", TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08");
 
         Assert.False(resultado.IsError);
         Assert.Equal("Producto", resultado.Value.Nombre);
@@ -82,7 +87,8 @@ public class ProductoTests
     [Fact]
     public void Crear_DebeTrimearCodigoBarras()
     {
-        var resultado = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido, codigoBarras: "  123456  ");
+        var resultado = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido,
+            codigoBarras: "  123456  ", tarifaIvaImpuestoCodigo: "08");
 
         Assert.False(resultado.IsError);
         Assert.Equal("123456", resultado.Value.CodigoBarras);
@@ -200,7 +206,7 @@ public class ProductoTests
     {
         // NoAplicaExistencias=true: siempre Success aunque cantidad > existencia (existencia 0)
         var producto = Producto.Crear(CodigoValido, NombreValido, TipoItem.Bien, PrecioValido,
-            noAplicaExistencias: true).Value;
+            noAplicaExistencias: true, tarifaIvaImpuestoCodigo: "08").Value;
 
         var resultado = producto.ValidarStockDisponible(999m);
 
@@ -210,7 +216,8 @@ public class ProductoTests
     [Fact]
     public void ValidarStockDisponible_RetornaSuccess_CuandoCantidadMenorQueExistencia()
     {
-        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido).Value;
+        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08").Value;
         producto.AplicarMovimientoStock(10m); // existencia = 10
 
         var resultado = producto.ValidarStockDisponible(9m);
@@ -222,7 +229,8 @@ public class ProductoTests
     public void ValidarStockDisponible_RetornaSuccess_CuandoCantidadIgualAExistencia()
     {
         // cantidad == existencia debe permitirse (queda en 0)
-        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido).Value;
+        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08").Value;
         producto.AplicarMovimientoStock(5m); // existencia = 5
 
         var resultado = producto.ValidarStockDisponible(5m);
@@ -233,7 +241,8 @@ public class ProductoTests
     [Fact]
     public void ValidarStockDisponible_RetornaError_CuandoCantidadMayorQueExistencia()
     {
-        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido).Value;
+        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08").Value;
         producto.AplicarMovimientoStock(5m); // existencia = 5
 
         var resultado = producto.ValidarStockDisponible(6m);
@@ -252,9 +261,11 @@ public class ProductoTests
     [Fact]
     public void Actualizar_DebeModificarCampos_CuandoDatosValidos()
     {
-        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido).Value;
+        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08").Value;
 
-        var resultado = producto.Actualizar("P002", "  Nuevo Nombre  ", TipoItem.Servicio, 2000m);
+        var resultado = producto.Actualizar("P002", "  Nuevo Nombre  ", TipoItem.Servicio, 2000m,
+            tarifaIvaImpuestoCodigo: "08");
 
         Assert.False(resultado.IsError);
         Assert.Equal("P002", producto.Codigo);
@@ -266,11 +277,36 @@ public class ProductoTests
     [Fact]
     public void Actualizar_DebeRetornarError_CuandoCodigoVacio()
     {
-        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido).Value;
+        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08").Value;
 
-        var resultado = producto.Actualizar(string.Empty, NombreValido, TipoItemValido, PrecioValido);
+        var resultado = producto.Actualizar(string.Empty, NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08");
 
         Assert.True(resultado.IsError);
         Assert.Contains(resultado.Errors, e => e.Code == ProductoErrors.CodigoRequerido.Code);
+    }
+
+    [Fact]
+    public void Crear_DebeRetornarError_CuandoTarifaIvaVacia()
+    {
+        var resultado = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "");
+
+        Assert.True(resultado.IsError);
+        Assert.Contains(resultado.Errors, e => e.Code == ProductoErrors.TarifaIvaRequerida.Code);
+    }
+
+    [Fact]
+    public void Actualizar_DebeRetornarError_CuandoTarifaIvaVacia()
+    {
+        var producto = Producto.Crear(CodigoValido, NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: "08").Value;
+
+        var resultado = producto.Actualizar(CodigoValido, NombreValido, TipoItemValido, PrecioValido,
+            tarifaIvaImpuestoCodigo: null);
+
+        Assert.True(resultado.IsError);
+        Assert.Contains(resultado.Errors, e => e.Code == ProductoErrors.TarifaIvaRequerida.Code);
     }
 }

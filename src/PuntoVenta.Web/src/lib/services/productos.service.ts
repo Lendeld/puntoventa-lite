@@ -13,6 +13,7 @@ interface CrearProductoServiceParams {
     descripcion: string | null;
     precioCosto: number | null;
     categoriaId: string | null;
+    proveedorId?: string | null;
     tarifaIvaImpuestoCodigo: string | null;
     noAplicaExistencias?: boolean;
     permiteModificarPrecioUnitario?: boolean;
@@ -80,6 +81,7 @@ export async function actualizarProductoService(
             descripcion: body.descripcion,
             precioCosto: body.precioCosto,
             categoriaId: body.categoriaId,
+            proveedorId: body.proveedorId,
             tarifaIvaImpuestoCodigo: body.tarifaIvaImpuestoCodigo,
             noAplicaExistencias: body.noAplicaExistencias,
             permiteModificarPrecioUnitario: body.permiteModificarPrecioUnitario,

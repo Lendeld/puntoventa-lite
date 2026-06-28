@@ -19,7 +19,8 @@ public sealed record ActualizarProductoRequest(
     Guid? CategoriaId = null,
     string? TarifaIvaImpuestoCodigo = null,
     bool? NoAplicaExistencias = null,
-    bool? PermiteModificarPrecioUnitario = null);
+    bool? PermiteModificarPrecioUnitario = null,
+    Guid? ProveedorId = null);
 
 public sealed class ActualizarProductoEndpoint(IMediator mediator) : Endpoint<ActualizarProductoRequest>
 {
@@ -45,7 +46,8 @@ public sealed class ActualizarProductoEndpoint(IMediator mediator) : Endpoint<Ac
                 id, req.Codigo, req.Nombre, req.TipoItem, req.PrecioUnitario,
                 req.CodigoBarras, req.Descripcion, req.ImagenUrl, req.PrecioCosto,
                 req.CategoriaId, req.TarifaIvaImpuestoCodigo,
-                req.NoAplicaExistencias, req.PermiteModificarPrecioUnitario), ct);
+                req.NoAplicaExistencias, req.PermiteModificarPrecioUnitario,
+                req.ProveedorId), ct);
 
         if (result.IsError) { await Send.ResultAsync(result.Errors.ToProblem()); return; }
         await Send.NoContentAsync(ct);

@@ -78,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenRevocadoRepository, TokenRevocadoRepository>();
         services.AddScoped<IUsuarioPermisoRepository, UsuarioPermisoRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddScoped<IProveedorRepository, ProveedorRepository>();
         services.AddScoped<IVendedorRepository, VendedorRepository>();
 
         // Servicios de seguridad e infraestructura

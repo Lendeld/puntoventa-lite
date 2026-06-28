@@ -42,7 +42,8 @@ export default function EditProductoForm({
             [PRODUCTO_FIELDS.PRECIO_UNITARIO]: 0,
             [PRODUCTO_FIELDS.PRECIO_COSTO]: undefined,
             [PRODUCTO_FIELDS.CATEGORIA_ID]: "",
-            [PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO]: undefined,
+            [PRODUCTO_FIELDS.PROVEEDOR_ID]: "",
+            [PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO]: "",
             [PRODUCTO_FIELDS.NO_APLICA_EXISTENCIAS]: false,
             [PRODUCTO_FIELDS.PERMITE_MODIFICAR_PRECIO_UNITARIO]: false,
         },
@@ -80,8 +81,9 @@ export default function EditProductoForm({
             [PRODUCTO_FIELDS.PRECIO_UNITARIO]: producto.precioUnitario,
             [PRODUCTO_FIELDS.PRECIO_COSTO]: producto.precioCosto ?? undefined,
             [PRODUCTO_FIELDS.CATEGORIA_ID]: producto.categoriaId ?? "",
+            [PRODUCTO_FIELDS.PROVEEDOR_ID]: producto.proveedorId ?? "",
             [PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO]:
-                producto.tarifaIvaImpuestoCodigo ?? undefined,
+                producto.tarifaIvaImpuestoCodigo ?? "",
             [PRODUCTO_FIELDS.NO_APLICA_EXISTENCIAS]: producto.noAplicaExistencias,
             [PRODUCTO_FIELDS.PERMITE_MODIFICAR_PRECIO_UNITARIO]:
                 producto.permiteModificarPrecioUnitario,

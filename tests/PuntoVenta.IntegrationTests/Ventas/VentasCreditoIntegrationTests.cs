@@ -206,6 +206,7 @@ public sealed class VentasCreditoIntegrationTests(IntegrationTestFixture fixture
             Nombre = $"Producto {codigo}",
             TipoItem = 1,
             PrecioUnitario = precio,
+            TarifaIvaImpuestoCodigo = "10", // Exenta (0% IVA): mantiene total == subtotal en los flujos
             ExistenciaInicial = 1000m
         }, TestContext.Current.CancellationToken);
         resp.EnsureSuccessStatusCode();

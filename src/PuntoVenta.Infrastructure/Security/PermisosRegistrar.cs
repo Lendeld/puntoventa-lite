@@ -69,6 +69,10 @@ public static class PermisosRegistrar
         public const string VendedoresToggle = "vendedores:toggle";
 
         // Módulo: proveedores
+        public const string ProveedoresVer = "proveedores:ver";
+        public const string ProveedoresCrear = "proveedores:crear";
+        public const string ProveedoresEditar = "proveedores:editar";
+        public const string ProveedoresToggle = "proveedores:toggle";
 
         // Módulo: bodegas
 

@@ -13,6 +13,7 @@ public class CrearFacturaHandlerTests
     private static Producto CrearProductoConStock(decimal existencia, bool noAplicaExistencias = false)
     {
         var p = Producto.Crear("P-TEST", "Producto Test", TipoItem.Bien, 1000m,
+            tarifaIvaImpuestoCodigo: "08",
             noAplicaExistencias: noAplicaExistencias).Value;
         if (existencia > 0)
             p.AplicarMovimientoStock(existencia);

@@ -114,6 +114,8 @@ export default function DetalleProductoPageSection({
     const { data: tarifas } = useTarifasIvaActivasQuery();
 
     const categoriaNombre = categorias?.find((c) => c.id === producto.categoriaId)?.nombre;
+    // Viene denormalizado del backend: muestra el proveedor aunque esté inactivo.
+    const proveedorNombre = producto.proveedorNombre;
     const tarifa = tarifas?.find(
         (t) => t.codigo === producto.tarifaIvaImpuestoCodigo,
     );
@@ -209,7 +211,7 @@ export default function DetalleProductoPageSection({
                 <Grid.Col span={{ base: 12, md: 4 }}>
                     <DetailCard
                         title="Clasificación"
-                        description="Categoría asociada."
+                        description="Categoría y proveedor asociados."
                         icon={<IconCategory size={18} />}
                         className="h-full"
                     >
@@ -217,6 +219,10 @@ export default function DetalleProductoPageSection({
                             <LabelValue
                                 label="Categoría"
                                 value={categoriaNombre}
+                            />
+                            <LabelValue
+                                label="Proveedor"
+                                value={proveedorNombre}
                             />
                         </Stack>
                     </DetailCard>

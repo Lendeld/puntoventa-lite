@@ -20,6 +20,8 @@ export interface ProductoDto {
     precioUnitario: number;
     precioCosto: number | null;
     categoriaId: string | null;
+    proveedorId: string | null;
+    proveedorNombre: string | null;
     tarifaIvaImpuestoCodigo: string | null;
     noAplicaExistencias: boolean;
     permiteModificarPrecioUnitario: boolean;
