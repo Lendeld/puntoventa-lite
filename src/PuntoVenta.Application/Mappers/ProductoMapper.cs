@@ -12,6 +12,7 @@ public static partial class ProductoMapper
     [MapperIgnoreSource(nameof(Producto.UsuarioModificacionId))]
     [MapperIgnoreSource(nameof(Producto.UsuarioModificacion))]
     [MapperIgnoreSource(nameof(Producto.Activo))]
+    [MapperIgnoreTarget(nameof(ProductoDto.ProveedorNombre))] // se rellena en el handler del detalle (no hay nav en la entidad)
     [MapProperty(nameof(Producto.Existencia), nameof(ProductoDto.ExistenciaTotal))]
     public static partial ProductoDto ToDto(Producto producto);
 }

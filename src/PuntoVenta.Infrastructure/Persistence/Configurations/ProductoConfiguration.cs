@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PuntoVenta.Domain.Entities.Categorias;
 using PuntoVenta.Domain.Entities.Productos;
+using PuntoVenta.Domain.Entities.Proveedores;
 using PuntoVenta.Domain.Entities.TarifasIvaImpuesto;
 
 namespace PuntoVenta.Infrastructure.Persistence.Configurations;
@@ -66,6 +67,12 @@ public class ProductoConfiguration : BaseAuditableEntityConfiguration<Producto>
         builder.HasOne<Categoria>()
             .WithMany()
             .HasForeignKey(e => e.CategoriaId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Proveedor>()
+            .WithMany()
+            .HasForeignKey(e => e.ProveedorId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 

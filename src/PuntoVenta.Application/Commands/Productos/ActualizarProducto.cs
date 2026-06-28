@@ -18,12 +18,14 @@ public sealed record ActualizarProductoCommand(
     Guid? CategoriaId = null,
     string? TarifaIvaImpuestoCodigo = null,
     bool? NoAplicaExistencias = null,
-    bool? PermiteModificarPrecioUnitario = null) : IRequest<ErrorOr<Success>>;
+    bool? PermiteModificarPrecioUnitario = null,
+    Guid? ProveedorId = null) : IRequest<ErrorOr<Success>>;
 
 public sealed class ActualizarProductoHandler(
     IUsuarioActual usuarioActual,
     IProductoRepository productoRepository,
     ICategoriaRepository categoriaRepository,
+    IProveedorRepository proveedorRepository,
     IPermisoCache permisoCache) : IRequestHandler<ActualizarProductoCommand, ErrorOr<Success>>
 {
     private const string PermisoProductosNoAplicaExistencias = "productos:no-aplica-existencias";
@@ -31,6 +33,7 @@ public sealed class ActualizarProductoHandler(
     private readonly IUsuarioActual _usuarioActual = usuarioActual;
     private readonly IProductoRepository _productoRepository = productoRepository;
     private readonly ICategoriaRepository _categoriaRepository = categoriaRepository;
+    private readonly IProveedorRepository _proveedorRepository = proveedorRepository;
     private readonly IPermisoCache _permisoCache = permisoCache;
 
     public async ValueTask<ErrorOr<Success>> Handle(ActualizarProductoCommand command, CancellationToken cancellationToken)
@@ -79,6 +82,15 @@ public sealed class ActualizarProductoHandler(
             }
         }
 
+        if (command.ProveedorId.HasValue)
+        {
+            var proveedor = await _proveedorRepository.ObtenerPorIdConAuditoriaAsync(command.ProveedorId.Value, cancellationToken);
+            if (proveedor is null)
+            {
+                return Error.Validation("Producto_ProveedorId", "El proveedor indicado no existe.");
+            }
+        }
+
         var resultado = producto.Actualizar(
             command.Codigo,
             command.Nombre,
@@ -91,7 +103,8 @@ public sealed class ActualizarProductoHandler(
             command.CategoriaId,
             command.TarifaIvaImpuestoCodigo,
             noAplicaExistencias,
-            permiteModificarPrecioUnitario);
+            permiteModificarPrecioUnitario,
+            command.ProveedorId);
 
         if (resultado.IsError)
         {

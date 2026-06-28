@@ -43,6 +43,9 @@ public static class ProductoErrors
     public static Error NoAplicaExistenciasSoloBien =>
         Error.Validation("Producto_NoAplicaExistencias", "La opción No aplica existencias solo puede activarse para productos tipo bien.");
 
+    public static Error TarifaIvaRequerida =>
+        Error.Validation("Producto_TarifaIvaImpuestoCodigo", "La tarifa de IVA es requerida.");
+
     public static Error NoEncontrado =>
         Error.NotFound("Producto_NoEncontrado", "El producto no existe.");
 

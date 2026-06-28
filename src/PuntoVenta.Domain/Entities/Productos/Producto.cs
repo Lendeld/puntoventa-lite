@@ -22,6 +22,7 @@ public sealed class Producto : BaseAuditableEntity
     public decimal PrecioUnitario { get; private set; }
     public decimal? PrecioCosto { get; private set; }
     public Guid? CategoriaId { get; private set; }
+    public Guid? ProveedorId { get; private set; }
     public string? TarifaIvaImpuestoCodigo { get; private set; }
     public bool NoAplicaExistencias { get; private set; }
     public bool PermiteModificarPrecioUnitario { get; private set; }
@@ -39,12 +40,13 @@ public sealed class Producto : BaseAuditableEntity
         Guid? categoriaId = null,
         string? tarifaIvaImpuestoCodigo = null,
         bool noAplicaExistencias = false,
-        bool permiteModificarPrecioUnitario = false)
+        bool permiteModificarPrecioUnitario = false,
+        Guid? proveedorId = null)
     {
         var errores = Validar(
             codigo, nombre, tipoItem, precioUnitario,
             codigoBarras, descripcion, imagenUrl, precioCosto,
-            noAplicaExistencias);
+            noAplicaExistencias, tarifaIvaImpuestoCodigo);
 
         if (errores.Count > 0)
         {
@@ -62,6 +64,7 @@ public sealed class Producto : BaseAuditableEntity
             PrecioUnitario = precioUnitario,
             PrecioCosto = precioCosto,
             CategoriaId = categoriaId,
+            ProveedorId = proveedorId,
             TarifaIvaImpuestoCodigo = string.IsNullOrWhiteSpace(tarifaIvaImpuestoCodigo) ? null : tarifaIvaImpuestoCodigo.Trim(),
             NoAplicaExistencias = noAplicaExistencias,
             PermiteModificarPrecioUnitario = permiteModificarPrecioUnitario
@@ -80,12 +83,13 @@ public sealed class Producto : BaseAuditableEntity
         Guid? categoriaId = null,
         string? tarifaIvaImpuestoCodigo = null,
         bool noAplicaExistencias = false,
-        bool permiteModificarPrecioUnitario = false)
+        bool permiteModificarPrecioUnitario = false,
+        Guid? proveedorId = null)
     {
         var errores = Validar(
             codigo, nombre, tipoItem, precioUnitario,
             codigoBarras, descripcion, imagenUrl, precioCosto,
-            noAplicaExistencias);
+            noAplicaExistencias, tarifaIvaImpuestoCodigo);
 
         if (errores.Count > 0)
         {
@@ -101,6 +105,7 @@ public sealed class Producto : BaseAuditableEntity
         PrecioUnitario = precioUnitario;
         PrecioCosto = precioCosto;
         CategoriaId = categoriaId;
+        ProveedorId = proveedorId;
         TarifaIvaImpuestoCodigo = string.IsNullOrWhiteSpace(tarifaIvaImpuestoCodigo) ? null : tarifaIvaImpuestoCodigo.Trim();
         NoAplicaExistencias = noAplicaExistencias;
         PermiteModificarPrecioUnitario = permiteModificarPrecioUnitario;
@@ -140,7 +145,8 @@ public sealed class Producto : BaseAuditableEntity
         string? descripcion,
         string? imagenUrl,
         decimal? precioCosto,
-        bool noAplicaExistencias)
+        bool noAplicaExistencias,
+        string? tarifaIvaImpuestoCodigo)
     {
         var errores = new List<Error>();
 
@@ -195,6 +201,11 @@ public sealed class Producto : BaseAuditableEntity
         if (tipoItem == TipoItem.Servicio && noAplicaExistencias)
         {
             errores.Add(ProductoErrors.NoAplicaExistenciasSoloBien);
+        }
+
+        if (string.IsNullOrWhiteSpace(tarifaIvaImpuestoCodigo))
+        {
+            errores.Add(ProductoErrors.TarifaIvaRequerida);
         }
 
         return errores;

@@ -28,13 +28,13 @@ public sealed class NegocioTicketConfig : BaseAuditableEntity
 
     public string? MensajePie { get; private set; }
 
-    public bool MostrarLogo { get; private set; } = true;
+    public bool MostrarLogo { get; private set; }
 
     // Si está activo, el ticket sale en 2 copias: una rotulada "Cliente" y otra "Negocio" al pie.
     public bool AplicaCopiaClienteNegocio { get; private set; }
 
     // Si está activo, ticket y PDF imprimen el código de barras del consecutivo al pie.
-    public bool MostrarCodigoBarras { get; private set; } = true;
+    public bool MostrarCodigoBarras { get; private set; }
 
     public IReadOnlyList<ConfiguracionPieDocumento> Configuraciones => _configuraciones;
 
@@ -43,11 +43,13 @@ public sealed class NegocioTicketConfig : BaseAuditableEntity
 
     public static ErrorOr<NegocioTicketConfig> Crear()
     {
+        // Logo y código de barras arrancan inactivos por defecto; el negocio los activa
+        // desde la configuración de ticket si los quiere.
         var config = new NegocioTicketConfig
         {
             MensajePie = null,
-            MostrarLogo = true,
-            MostrarCodigoBarras = true
+            MostrarLogo = false,
+            MostrarCodigoBarras = false
         };
         config._elementosEncabezado.AddRange(EncabezadoPorDefecto());
         return config;
