@@ -27,8 +27,10 @@ export async function GET(request: NextRequest) {
     const qs = new URLSearchParams();
     const codigo = url.searchParams.get("Codigo");
     const categoriaId = url.searchParams.get("CategoriaId");
+    const proveedorId = url.searchParams.get("ProveedorId");
     if (codigo) qs.set("Codigo", codigo);
     if (categoriaId) qs.set("CategoriaId", categoriaId);
+    if (proveedorId) qs.set("ProveedorId", proveedorId);
 
     const sesion = await obtenerSesion();
     let response: Response;
