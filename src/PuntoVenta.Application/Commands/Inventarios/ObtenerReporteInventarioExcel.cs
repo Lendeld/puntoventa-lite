@@ -8,7 +8,8 @@ namespace PuntoVenta.Application.Commands.Inventarios;
 
 public sealed record ObtenerReporteInventarioExcelQuery(
     string? Codigo,
-    Guid? CategoriaId) : IRequest<ErrorOr<ReporteInventarioExcelDto>>;
+    Guid? CategoriaId,
+    Guid? ProveedorId) : IRequest<ErrorOr<ReporteInventarioExcelDto>>;
 
 public sealed class ObtenerReporteInventarioExcelHandler(
     IMediator mediator,
@@ -28,7 +29,7 @@ public sealed class ObtenerReporteInventarioExcelHandler(
     {
         // Reutiliza la lógica de datos — no duplica la proyección ni el cap.
         var datos = await _mediator.Send(
-            new ObtenerReporteInventarioQuery(query.Codigo, query.CategoriaId),
+            new ObtenerReporteInventarioQuery(query.Codigo, query.CategoriaId, query.ProveedorId),
             cancellationToken);
 
         if (datos.IsError)

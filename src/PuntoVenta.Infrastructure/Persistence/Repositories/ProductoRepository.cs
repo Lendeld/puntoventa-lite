@@ -3,6 +3,7 @@ using PuntoVenta.Application.DTOs.Inventarios;
 using PuntoVenta.Application.Interfaces;
 using PuntoVenta.Domain.Entities.Categorias;
 using PuntoVenta.Domain.Entities.Productos;
+using PuntoVenta.Domain.Entities.Proveedores;
 using PuntoVenta.Domain.Entities.TarifasIvaImpuesto;
 
 namespace PuntoVenta.Infrastructure.Persistence.Repositories;
@@ -74,6 +75,7 @@ public sealed class ProductoRepository(ApplicationDbContext context) : Repositor
     public async Task<IReadOnlyList<InventarioReporteProyeccionDto>> ObtenerReporteInventarioProyectadoAsync(
         string? codigo,
         Guid? categoriaId,
+        Guid? proveedorId,
         int maxFilas,
         CancellationToken cancellationToken = default)
     {
@@ -90,6 +92,9 @@ public sealed class ProductoRepository(ApplicationDbContext context) : Repositor
         if (categoriaId.HasValue)
             query = query.Where(p => p.CategoriaId == categoriaId.Value);
 
+        if (proveedorId.HasValue)
+            query = query.Where(p => p.ProveedorId == proveedorId.Value);
+
         // Lite es single-tenant: las subconsultas NO llevan filtro de tenant.
         return await query
             .OrderBy(p => p.Codigo)
@@ -103,6 +108,10 @@ public sealed class ProductoRepository(ApplicationDbContext context) : Repositor
                 Categoria = Context.Set<Categoria>()
                     .Where(c => c.Id == p.CategoriaId)
                     .Select(c => c.Nombre)
+                    .FirstOrDefault(),
+                Proveedor = Context.Set<Proveedor>()
+                    .Where(pr => pr.Id == p.ProveedorId)
+                    .Select(pr => pr.Nombre)
                     .FirstOrDefault(),
                 FechaCreacion = p.FechaCreacion,
                 Existencia = p.Existencia,
