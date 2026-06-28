@@ -1,4 +1,5 @@
 using PuntoVenta.Application.Commands.Ventas;
+using PuntoVenta.Domain.Entities.Productos;
 using PuntoVenta.Domain.Entities.Ventas;
 using PuntoVenta.UnitTests.Application.Ventas.Fakes;
 
@@ -86,17 +87,51 @@ public class ConvertirApartadoAFacturaHandlerTests
     }
 
     // ──────────────────────────────────────────────
+    // Stock insuficiente — no persiste factura y NO consume consecutivo
+    // ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_DebeRechazar_CuandoStockInsuficienteEnLineasDelApartado()
+    {
+        // Producto con control de existencia (noAplicaExistencias=false) y 0 unidades.
+        var producto = Producto.Crear("APT-STK", "Prod Apartado", TipoItem.Bien, 500m,
+            tarifaIvaImpuestoCodigo: "08",
+            noAplicaExistencias: false).Value;
+        // existencia = 0
+
+        var apartado = DominioHelper.CrearApartadoReservadoConProducto(CajaId, producto);
+        var docRepo = new FakeDocumentoVentaRepository(editable: apartado);
+        var secRepo = new FakeSecuenciaRepository();
+        var unitOfWork = new FakeUnitOfWork();
+        var handler = CrearHandler(docRepo, new FakeProductoRepository(producto), secRepo, unitOfWork);
+
+        var resultado = await handler.Handle(
+            new ConvertirApartadoAFacturaCommand(apartado.Id),
+            CancellationToken.None);
+
+        Assert.True(resultado.IsError);
+        Assert.Contains(resultado.Errors, e => e.Code.StartsWith("Producto_StockInsuficiente_"));
+        Assert.Empty(docRepo.Guardados);    // factura NO persistida
+        Assert.True(unitOfWork.LastTransaction.RolledBack); // transacción revertida → consecutivo no queda
+    }
+
+    // ──────────────────────────────────────────────
     // Helper
     // ──────────────────────────────────────────────
 
-    private static ConvertirApartadoAFacturaHandler CrearHandler(FakeDocumentoVentaRepository repo)
+    private static ConvertirApartadoAFacturaHandler CrearHandler(
+        FakeDocumentoVentaRepository repo,
+        FakeProductoRepository? productoRepo = null,
+        FakeSecuenciaRepository? secRepo = null,
+        FakeUnitOfWork? unitOfWork = null)
         => new ConvertirApartadoAFacturaHandler(
             new FakeUsuarioActualVentas(),
             new FakeFechaActual(),
+            unitOfWork ?? new FakeUnitOfWork(),
             repo,
-            new FakeSecuenciaRepository(),
+            secRepo ?? new FakeSecuenciaRepository(),
             new FakeNegocioRepository(),
             new FakeDocumentoVentaEventoService(),
-            new FakeProductoRepository(),
+            productoRepo ?? new FakeProductoRepository(),
             new FakeMovimientoStockRepository());
 }

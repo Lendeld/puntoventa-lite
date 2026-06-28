@@ -59,5 +59,10 @@ export const PERMISOS = {
     CAJAS_TOGGLE: "cajas:toggle",
     REPORTES_VER: "reportes:ver",
     REPORTES_VENTAS_RANGO_VER: "reportes:ventas-rango:ver",
+    REPORTES_INVENTARIO_VER: "reportes:inventario:ver",
+    PROVEEDORES_VER: "proveedores:ver",
+    PROVEEDORES_CREAR: "proveedores:crear",
+    PROVEEDORES_EDITAR: "proveedores:editar",
+    PROVEEDORES_TOGGLE: "proveedores:toggle",
     BACKUP_ADMINISTRAR: "backup:administrar",
 } as const;

@@ -22,6 +22,7 @@ using PuntoVenta.Domain.Entities.TarifasIvaImpuesto;
 using PuntoVenta.Domain.Entities.TiposIdentificacion;
 using PuntoVenta.Domain.Entities.Tokens;
 using PuntoVenta.Domain.Entities.Usuarios;
+using PuntoVenta.Domain.Entities.Proveedores;
 using PuntoVenta.Domain.Entities.Vendedores;
 using PuntoVenta.Domain.Entities.Ventas;
 
@@ -49,6 +50,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<CodigoImpuesto> CodigosImpuesto => Set<CodigoImpuesto>();
     public DbSet<TarifaIvaImpuesto> TarifasIvaImpuesto => Set<TarifaIvaImpuesto>();
     public DbSet<Categoria> Categorias => Set<Categoria>();
+    public DbSet<Proveedor> Proveedores => Set<Proveedor>();
     public DbSet<Producto> Productos => Set<Producto>();
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<Vendedor> Vendedores => Set<Vendedor>();

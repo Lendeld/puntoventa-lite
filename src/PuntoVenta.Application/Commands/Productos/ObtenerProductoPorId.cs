@@ -10,9 +10,11 @@ namespace PuntoVenta.Application.Commands.Productos;
 public sealed record ObtenerProductoPorIdQuery(Guid Id) : IRequest<ErrorOr<ProductoDto>>;
 
 public sealed class ObtenerProductoPorIdHandler(
-    IProductoRepository productoRepository) : IRequestHandler<ObtenerProductoPorIdQuery, ErrorOr<ProductoDto>>
+    IProductoRepository productoRepository,
+    IProveedorRepository proveedorRepository) : IRequestHandler<ObtenerProductoPorIdQuery, ErrorOr<ProductoDto>>
 {
     private readonly IProductoRepository _productoRepository = productoRepository;
+    private readonly IProveedorRepository _proveedorRepository = proveedorRepository;
 
     public async ValueTask<ErrorOr<ProductoDto>> Handle(ObtenerProductoPorIdQuery query, CancellationToken cancellationToken)
     {
@@ -23,6 +25,19 @@ public sealed class ObtenerProductoPorIdHandler(
             return ProductoErrors.NoEncontrado;
         }
 
-        return ProductoMapper.ToDto(producto);
+        var dto = ProductoMapper.ToDto(producto);
+
+        // Resuelve el nombre del proveedor incluso si quedó inactivo (ObtenerPorIdConAuditoria
+        // no filtra por Activo), para que el detalle no lo muestre como "sin proveedor".
+        if (producto.ProveedorId.HasValue)
+        {
+            var proveedor = await _proveedorRepository.ObtenerPorIdConAuditoriaAsync(producto.ProveedorId.Value, cancellationToken);
+            if (proveedor is not null)
+            {
+                dto = dto with { ProveedorNombre = proveedor.Nombre };
+            }
+        }
+
+        return dto;
     }
 }

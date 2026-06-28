@@ -321,6 +321,183 @@ public sealed class VentasFlujosIntegrationTests(IntegrationTestFixture fixture)
     }
 
     // ══════════════════════════════════════════════
+    // PROFORMA → FACTURA: STOCK BLOQUEADO
+    // ══════════════════════════════════════════════
+
+    [Fact]
+    public async Task Proforma_Facturar_StockInsuficiente_Retorna400_YExistenciaSigue5()
+    {
+        var token = await fixture.ObtenerTokenAdminAsync();
+        var cliente = ConstruirCliente(token);
+
+        // 1. Crear producto con existencia inicial 5.
+        var codigo = $"PFS-{Guid.NewGuid():N}"[..15];
+        var productoId = await CrearProductoConStockAsync(cliente, codigo, existenciaInicial: 5m);
+
+        // 2. Crear proforma con cantidad 10 (> 5).
+        var crearResp = await cliente.PostAsJsonAsync("/ventas/proformas", new
+        {
+            CondicionVentaCodigo = "01",
+            Lineas = new[]
+            {
+                new { ProductoId = productoId, Cantidad = 10m, PrecioUnitario = 1000m, MontoDescuento = 0m }
+            }
+        }, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, crearResp.StatusCode);
+        var proformaId = await crearResp.Content.ReadFromJsonAsync<Guid>(TestContext.Current.CancellationToken);
+
+        // 3. Intentar facturar → debe rechazar con 400.
+        var factResp = await cliente.PostAsJsonAsync($"/ventas/proformas/{proformaId}/facturar", new
+        {
+            Pagos = new[]
+            {
+                new
+                {
+                    MonedaCodigo = "CRC", TipoCambioAplicado = 1m, MedioPagoCodigo = "01",
+                    MontoEntregado = 10000m, MontoAplicadoMonedaPago = 10000m,
+                    MontoAplicadoDocumento = 10000m, MontoVueltoMonedaPago = 0m, MontoVueltoDocumento = 0m
+                }
+            }
+        }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, factResp.StatusCode);
+
+        // 4. Existencia sigue en 5.
+        var getResp = await cliente.GetAsync($"/productos/{productoId}", TestContext.Current.CancellationToken);
+        var body = await getResp.Content.ReadFromJsonAsync<ProductoStockResponse>(TestContext.Current.CancellationToken);
+        Assert.NotNull(body);
+        Assert.Equal(5m, body.ExistenciaTotal);
+    }
+
+    [Fact]
+    public async Task Proforma_Facturar_CasoFeliz_ExistenciaQuedaEnCero()
+    {
+        var token = await fixture.ObtenerTokenAdminAsync();
+        var cliente = ConstruirCliente(token);
+
+        // 1. Crear producto con existencia inicial 5.
+        var codigo = $"PFO-{Guid.NewGuid():N}"[..15];
+        var productoId = await CrearProductoConStockAsync(cliente, codigo, existenciaInicial: 5m);
+
+        // 2. Crear proforma con cantidad exacta 5.
+        var crearResp = await cliente.PostAsJsonAsync("/ventas/proformas", new
+        {
+            CondicionVentaCodigo = "01",
+            Lineas = new[]
+            {
+                new { ProductoId = productoId, Cantidad = 5m, PrecioUnitario = 1000m, MontoDescuento = 0m }
+            }
+        }, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, crearResp.StatusCode);
+        var proformaId = await crearResp.Content.ReadFromJsonAsync<Guid>(TestContext.Current.CancellationToken);
+
+        // 3. Facturar → debe aceptar con 200 OK.
+        var factResp = await cliente.PostAsJsonAsync($"/ventas/proformas/{proformaId}/facturar", new
+        {
+            Pagos = new[]
+            {
+                new
+                {
+                    MonedaCodigo = "CRC", TipoCambioAplicado = 1m, MedioPagoCodigo = "01",
+                    MontoEntregado = 5000m, MontoAplicadoMonedaPago = 5000m,
+                    MontoAplicadoDocumento = 5000m, MontoVueltoMonedaPago = 0m, MontoVueltoDocumento = 0m
+                }
+            }
+        }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, factResp.StatusCode);
+        var facturaId = await factResp.Content.ReadFromJsonAsync<Guid>(TestContext.Current.CancellationToken);
+        Assert.NotEqual(Guid.Empty, facturaId);
+
+        // 4. Existencia queda en 0.
+        var getResp = await cliente.GetAsync($"/productos/{productoId}", TestContext.Current.CancellationToken);
+        var body = await getResp.Content.ReadFromJsonAsync<ProductoStockResponse>(TestContext.Current.CancellationToken);
+        Assert.NotNull(body);
+        Assert.Equal(0m, body.ExistenciaTotal);
+    }
+
+    // ══════════════════════════════════════════════
+    // STOCK INSUFICIENTE — existencia negativa bloqueada
+    // ══════════════════════════════════════════════
+
+    [Fact]
+    public async Task Factura_StockInsuficiente_Retorna400_YExistenciaSigue5()
+    {
+        var token = await fixture.ObtenerTokenAdminAsync();
+        var cliente = ConstruirCliente(token);
+
+        // 1. Crear producto con existencia inicial 5.
+        var codigo = $"STK-{Guid.NewGuid():N}"[..15];
+        var productoId = await CrearProductoConStockAsync(cliente, codigo, existenciaInicial: 5m);
+
+        // 2. Intentar facturar cantidad 10 (> 5) → debe rechazar con 400.
+        var facturaResp = await cliente.PostAsJsonAsync("/ventas/facturas", new
+        {
+            CondicionVentaCodigo = "01",
+            Lineas = new[]
+            {
+                new { ProductoId = productoId, Cantidad = 10m, PrecioUnitario = 1000m, MontoDescuento = 0m }
+            },
+            Pagos = new[]
+            {
+                new
+                {
+                    MonedaCodigo = "CRC", TipoCambioAplicado = 1m, MedioPagoCodigo = "01",
+                    MontoEntregado = 10000m, MontoAplicadoMonedaPago = 10000m,
+                    MontoAplicadoDocumento = 10000m, MontoVueltoMonedaPago = 0m, MontoVueltoDocumento = 0m
+                }
+            }
+        }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, facturaResp.StatusCode);
+
+        // 3. Verificar que la existencia sigue en 5 (la salida se previno).
+        var getResp = await cliente.GetAsync($"/productos/{productoId}", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, getResp.StatusCode);
+        var body = await getResp.Content.ReadFromJsonAsync<ProductoStockResponse>(TestContext.Current.CancellationToken);
+        Assert.NotNull(body);
+        Assert.Equal(5m, body.ExistenciaTotal);
+    }
+
+    [Fact]
+    public async Task Factura_CasoFeliz_ExistenciaQuedaEnCero()
+    {
+        var token = await fixture.ObtenerTokenAdminAsync();
+        var cliente = ConstruirCliente(token);
+
+        // 1. Crear producto con existencia inicial 5.
+        var codigo = $"OK5-{Guid.NewGuid():N}"[..15];
+        var productoId = await CrearProductoConStockAsync(cliente, codigo, existenciaInicial: 5m);
+
+        // 2. Facturar cantidad exacta 5 → debe aceptar con 201.
+        var facturaResp = await cliente.PostAsJsonAsync("/ventas/facturas", new
+        {
+            CondicionVentaCodigo = "01",
+            Lineas = new[]
+            {
+                new { ProductoId = productoId, Cantidad = 5m, PrecioUnitario = 1000m, MontoDescuento = 0m }
+            },
+            Pagos = new[]
+            {
+                new
+                {
+                    MonedaCodigo = "CRC", TipoCambioAplicado = 1m, MedioPagoCodigo = "01",
+                    MontoEntregado = 5000m, MontoAplicadoMonedaPago = 5000m,
+                    MontoAplicadoDocumento = 5000m, MontoVueltoMonedaPago = 0m, MontoVueltoDocumento = 0m
+                }
+            }
+        }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Created, facturaResp.StatusCode);
+
+        // 3. Verificar que la existencia quedó en 0.
+        var getResp = await cliente.GetAsync($"/productos/{productoId}", TestContext.Current.CancellationToken);
+        var body = await getResp.Content.ReadFromJsonAsync<ProductoStockResponse>(TestContext.Current.CancellationToken);
+        Assert.NotNull(body);
+        Assert.Equal(0m, body.ExistenciaTotal);
+    }
+
+    // ══════════════════════════════════════════════
     // Helpers
     // ══════════════════════════════════════════════
 
@@ -339,10 +516,27 @@ public sealed class VentasFlujosIntegrationTests(IntegrationTestFixture fixture)
             Codigo = codigo,
             Nombre = $"Producto {codigo}",
             TipoItem = 1, // Bien
-            PrecioUnitario = precio
+            PrecioUnitario = precio,
+            TarifaIvaImpuestoCodigo = "10", // Exenta (0% IVA): mantiene total == subtotal en los flujos
+            ExistenciaInicial = 1000m // suficiente para cualquier cantidad de test
         });
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<Guid>();
+    }
+
+    private async Task<Guid> CrearProductoConStockAsync(HttpClient cliente, string codigo, decimal existenciaInicial)
+    {
+        var resp = await cliente.PostAsJsonAsync("/productos", new
+        {
+            Codigo = codigo,
+            Nombre = $"Producto {codigo}",
+            TipoItem = 1, // Bien
+            PrecioUnitario = 1000m,
+            TarifaIvaImpuestoCodigo = "10", // Exenta (0% IVA): mantiene total == subtotal en los flujos
+            ExistenciaInicial = existenciaInicial
+        }, TestContext.Current.CancellationToken);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<Guid>(TestContext.Current.CancellationToken);
     }
 
     private async Task<Guid> CrearYEmitirFacturaAsync(
@@ -395,4 +589,9 @@ public sealed class VentasFlujosIntegrationTests(IntegrationTestFixture fixture)
         decimal TotalComprobante,
         decimal TotalPagado,
         decimal MontoNotasCredito);
+
+    private sealed record ProductoStockResponse(
+        Guid Id,
+        string Codigo,
+        decimal ExistenciaTotal);
 }

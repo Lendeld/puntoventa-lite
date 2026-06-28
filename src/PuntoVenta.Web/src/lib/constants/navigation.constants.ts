@@ -54,6 +54,11 @@ export const NAVIGATION_MENU = [
                 href: '/mantenimiento/vendedores',
                 icon: 'IconUserCheck',
             },
+            {
+                label: 'Proveedores',
+                href: '/mantenimiento/proveedores',
+                icon: 'IconTruck',
+            },
         ],
     },
     {
@@ -63,6 +68,11 @@ export const NAVIGATION_MENU = [
                 label: 'Reportes Ventas',
                 href: '/reportes-ventas',
                 icon: 'IconReportAnalytics',
+            },
+            {
+                label: 'Reportes Inventario',
+                href: '/reportes-inventario',
+                icon: 'IconReportSearch',
             },
         ],
     },

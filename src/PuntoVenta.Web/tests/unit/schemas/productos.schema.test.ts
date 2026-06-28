@@ -11,22 +11,30 @@ const BASE_VALID = {
     [PRODUCTO_FIELDS.PRECIO_UNITARIO]: 100,
     [PRODUCTO_FIELDS.PRECIO_COSTO]: undefined,
     [PRODUCTO_FIELDS.CATEGORIA_ID]: "3c4d5e6f-7a8b-4c9d-ae1f-2a3b4c5d6e7f",
-    [PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO]: undefined,
+    [PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO]: "08",
     [PRODUCTO_FIELDS.NO_APLICA_EXISTENCIAS]: false,
     [PRODUCTO_FIELDS.PERMITE_MODIFICAR_PRECIO_UNITARIO]: false,
 };
 
 describe("productos.schema — crearProductoSchema", () => {
-    it("acepta datos válidos sin tarifa IVA", () => {
+    it("acepta datos válidos con tarifa IVA", () => {
         expect(crearProductoSchema.safeParse(BASE_VALID).success).toBe(true);
     });
 
-    it("acepta datos válidos con tarifa IVA", () => {
+    it("rechaza tarifa IVA vacía", () => {
         const result = crearProductoSchema.safeParse({
             ...BASE_VALID,
-            [PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO]: "08",
+            [PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO]: "",
         });
-        expect(result.success).toBe(true);
+        expect(result.success).toBe(false);
+    });
+
+    it("rechaza tarifa IVA null", () => {
+        const result = crearProductoSchema.safeParse({
+            ...BASE_VALID,
+            [PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO]: null,
+        });
+        expect(result.success).toBe(false);
     });
 
     it("rechaza codigo vacío", () => {

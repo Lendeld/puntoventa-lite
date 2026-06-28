@@ -788,6 +788,9 @@ namespace PuntoVenta.Infrastructure.Migrations
                     b.Property<decimal>("PrecioUnitario")
                         .HasColumnType("decimal(18,5)");
 
+                    b.Property<Guid?>("ProveedorId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TarifaIvaImpuestoCodigo")
                         .HasMaxLength(2)
                         .HasColumnType("TEXT");
@@ -814,6 +817,8 @@ namespace PuntoVenta.Infrastructure.Migrations
 
                     b.HasIndex("Nombre");
 
+                    b.HasIndex("ProveedorId");
+
                     b.HasIndex("TarifaIvaImpuestoCodigo");
 
                     b.HasIndex("UsuarioCreacionId");
@@ -821,6 +826,63 @@ namespace PuntoVenta.Infrastructure.Migrations
                     b.HasIndex("UsuarioModificacionId");
 
                     b.ToTable("Productos", (string)null);
+                });
+
+            modelBuilder.Entity("PuntoVenta.Domain.Entities.Proveedores.Proveedor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Activo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Correo")
+                        .HasMaxLength(160)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NombreNormalizado")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Observacion")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("UsuarioCreacionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("UsuarioModificacionId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NombreNormalizado")
+                        .IsUnique();
+
+                    b.HasIndex("UsuarioCreacionId");
+
+                    b.HasIndex("UsuarioModificacionId");
+
+                    b.ToTable("Proveedores", (string)null);
                 });
 
             modelBuilder.Entity("PuntoVenta.Domain.Entities.Roles.Rol", b =>
@@ -2012,12 +2074,34 @@ namespace PuntoVenta.Infrastructure.Migrations
                         .HasForeignKey("CategoriaId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("PuntoVenta.Domain.Entities.Proveedores.Proveedor", null)
+                        .WithMany()
+                        .HasForeignKey("ProveedorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PuntoVenta.Domain.Entities.TarifasIvaImpuesto.TarifaIvaImpuesto", null)
                         .WithMany()
                         .HasForeignKey("TarifaIvaImpuestoCodigo")
                         .HasPrincipalKey("Codigo")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("PuntoVenta.Domain.Entities.Usuarios.Usuario", "UsuarioCreacion")
+                        .WithMany()
+                        .HasForeignKey("UsuarioCreacionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PuntoVenta.Domain.Entities.Usuarios.Usuario", "UsuarioModificacion")
+                        .WithMany()
+                        .HasForeignKey("UsuarioModificacionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("UsuarioCreacion");
+
+                    b.Navigation("UsuarioModificacion");
+                });
+
+            modelBuilder.Entity("PuntoVenta.Domain.Entities.Proveedores.Proveedor", b =>
+                {
                     b.HasOne("PuntoVenta.Domain.Entities.Usuarios.Usuario", "UsuarioCreacion")
                         .WithMany()
                         .HasForeignKey("UsuarioCreacionId")

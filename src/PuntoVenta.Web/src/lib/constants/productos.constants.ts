@@ -11,4 +11,5 @@ export const PRODUCTO_FIELDS = {
     NO_APLICA_EXISTENCIAS: "Producto_NoAplicaExistencias",
     PERMITE_MODIFICAR_PRECIO_UNITARIO: "Producto_PermiteModificarPrecioUnitario",
     EXISTENCIA_INICIAL: "Producto_ExistenciaInicial",
+    PROVEEDOR_ID: "Producto_ProveedorId",
 } as const;

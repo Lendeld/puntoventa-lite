@@ -205,17 +205,27 @@ public sealed class ActualizarProformaHandler(
 }
 
 public sealed class FacturarProformaHandler(
+    IUnitOfWork unitOfWork,
     IDocumentoVentaRepository documentoRepository,
     IMedioPagoRepository medioPagoRepository,
     ISecuenciaRepository secuenciaRepository,
     INegocioRepository negocioRepository,
-    IDocumentoVentaEventoService eventoService) : IRequestHandler<FacturarProformaCommand, ErrorOr<Guid>>
+    IDocumentoVentaEventoService eventoService,
+    IProductoRepository productoRepository,
+    IMovimientoStockRepository movimientoStockRepository,
+    IFechaActual fechaActual,
+    IUsuarioActual usuarioActual) : IRequestHandler<FacturarProformaCommand, ErrorOr<Guid>>
 {
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IDocumentoVentaRepository _documentoRepository = documentoRepository;
     private readonly IMedioPagoRepository _medioPagoRepository = medioPagoRepository;
     private readonly ISecuenciaRepository _secuenciaRepository = secuenciaRepository;
     private readonly INegocioRepository _negocioRepository = negocioRepository;
     private readonly IDocumentoVentaEventoService _eventoService = eventoService;
+    private readonly IProductoRepository _productoRepository = productoRepository;
+    private readonly IMovimientoStockRepository _movimientoStockRepository = movimientoStockRepository;
+    private readonly IFechaActual _fechaActual = fechaActual;
+    private readonly IUsuarioActual _usuarioActual = usuarioActual;
 
     public async ValueTask<ErrorOr<Guid>> Handle(FacturarProformaCommand command, CancellationToken cancellationToken)
     {
@@ -249,15 +259,29 @@ public sealed class FacturarProformaHandler(
         var negocio = await _negocioRepository.ObtenerAsync(cancellationToken);
         Guid? cajaId = negocio?.AplicaCajas == true ? command.CajaId : null;
 
+        await using var tx = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
         var consecutivo = await VentasHandlerHelpers.SiguienteConsecutivoAsync(
             TipoDocumentoVenta.Factura, _secuenciaRepository, cancellationToken);
-        if (consecutivo.IsError) return consecutivo.Errors;
+        if (consecutivo.IsError)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return consecutivo.Errors;
+        }
 
         var emitir = factura.Value.Emitir(cajaId, consecutivo.Value);
-        if (emitir.IsError) return emitir.Errors;
+        if (emitir.IsError)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return emitir.Errors;
+        }
 
         var convertir = proforma.MarcarConvertido();
-        if (convertir.IsError) return convertir.Errors;
+        if (convertir.IsError)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return convertir.Errors;
+        }
 
         _ = await _eventoService.RegistrarAsync(
             factura.Value.Id,
@@ -281,8 +305,24 @@ public sealed class FacturarProformaHandler(
             },
             cancellationToken: cancellationToken);
 
+        var stock = await VentasHandlerHelpers.AplicarMovimientosStockAsync(
+            factura.Value.Lineas,
+            factura.Value,
+            deltaEsNegativo: true,
+            _productoRepository,
+            _movimientoStockRepository,
+            _fechaActual.AhoraUtc,
+            _usuarioActual.UsuarioId,
+            cancellationToken);
+        if (stock.IsError)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return stock.Errors;
+        }
+
         await _documentoRepository.AddAsync(factura.Value, cancellationToken);
         await _documentoRepository.UpdateAsync(proforma, cancellationToken);
+        await tx.CommitAsync(cancellationToken);
         return factura.Value.Id;
     }
 }

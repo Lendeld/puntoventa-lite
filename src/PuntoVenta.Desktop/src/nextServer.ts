@@ -129,9 +129,11 @@ export async function startNextDevServer(apiUrl?: string): Promise<string> {
     // NEXT_DIST_DIR le pide al next.config.ts del web que use un .next-electron
     // separado del .next del Next dev normal (pnpm dev en otra terminal).
     // Sin esto, Next bloquea ambos por compartir lock en .next/.
-    // Sin shell — pnpmExecutable ya incluye .cmd en Windows. Node ejecuta el
-    // .cmd directamente sin necesidad de pasar por cmd.exe (que propagaría
-    // variables del shell y abre superficie de inyección).
+    // Windows: spawnear pnpm.cmd exige shell:true en Node >=20.12 (sin él da
+    // EINVAL — CVE-2024-27980 endureció el spawn de .cmd/.bat). El env va por
+    // options.env (no por el shell) y los args son estáticos, así que no hay
+    // superficie de inyección. En POSIX pnpm es binario y no necesita shell.
+    // nosemgrep: javascript.lang.security.audit.spawn-shell-true.spawn-shell-true -- falso positivo: args estáticos (dev-only, sin input de usuario); shell:true es el workaround documentado para spawnear pnpm.cmd en Windows sin EINVAL (Node >=20.12, ver comentario arriba).
     serverProcess = spawn(pnpmExecutable, ["dev", "--port", String(port)], {
         env: {
             ...process.env,
@@ -140,6 +142,7 @@ export async function startNextDevServer(apiUrl?: string): Promise<string> {
         },
         cwd: webDir,
         stdio: ["ignore", "pipe", "pipe"],
+        shell: process.platform === "win32",
     });
 
     serverProcess.stdout?.on("data", (chunk) => {

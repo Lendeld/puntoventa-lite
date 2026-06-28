@@ -28,6 +28,7 @@ export async function crearProductoAction(values: CrearProductoFormValues): Prom
         descripcion: normalizeNullableText(values[PRODUCTO_FIELDS.DESCRIPCION]),
         precioCosto: values[PRODUCTO_FIELDS.PRECIO_COSTO] ?? null,
         categoriaId: values[PRODUCTO_FIELDS.CATEGORIA_ID] || null,
+        proveedorId: values[PRODUCTO_FIELDS.PROVEEDOR_ID] || null,
         tarifaIvaImpuestoCodigo: values[PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO] || null,
         noAplicaExistencias:
             values[PRODUCTO_FIELDS.TIPO_ITEM] === 1
@@ -72,6 +73,7 @@ export async function editarProductoAction(
         descripcion: normalizeNullableText(values[PRODUCTO_FIELDS.DESCRIPCION]),
         precioCosto: values[PRODUCTO_FIELDS.PRECIO_COSTO] ?? null,
         categoriaId: values[PRODUCTO_FIELDS.CATEGORIA_ID] || null,
+        proveedorId: values[PRODUCTO_FIELDS.PROVEEDOR_ID] || null,
         tarifaIvaImpuestoCodigo: values[PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO] || null,
         noAplicaExistencias:
             values[PRODUCTO_FIELDS.TIPO_ITEM] === 1

@@ -10,6 +10,7 @@ import type {
     ObtenerReporteVentasRangoParams,
 } from "@lib/types/ventas.types";
 import type { ObtenerMovimientosStockParams } from "@lib/types/inventario.types";
+import type { ObtenerProveedoresPaginadoParams } from "@lib/types/proveedores.types";
 
 export const QUERY_KEYS = {
     auth: {
@@ -88,6 +89,12 @@ export const QUERY_KEYS = {
             ["ventas", "reporte-rango", params] as const,
         reporteMovimientosDinero: (params: ObtenerReporteMovimientosDineroParams) =>
             ["ventas", "reporte-movimientos-dinero", params] as const,
+    },
+    proveedores: {
+        all: ["proveedores"] as const,
+        activos: ["proveedores", "activos"] as const,
+        lista: (params: ObtenerProveedoresPaginadoParams) => ["proveedores", "lista", params] as const,
+        detalle: (id: string) => ["proveedores", "detalle", id] as const,
     },
     inventario: {
         all: ["inventario"] as const,
