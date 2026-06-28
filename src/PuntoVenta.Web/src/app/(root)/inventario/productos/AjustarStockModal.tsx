@@ -1,5 +1,6 @@
 "use client";
 
+import { AppNotifier } from "@components/ui/AppNotifier";
 import { AJUSTE_STOCK_FIELDS } from "@lib/constants/inventario.constants";
 import { QUERY_KEYS } from "@lib/constants/queryKeys.constants";
 import { ajustarStockAction } from "@lib/actions/inventario.actions";
@@ -10,6 +11,7 @@ import type { AjusteStockFormValues } from "@lib/schemas/inventario.schema";
 import { Button, Group, NumberInput, Stack, Text, Textarea } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 interface Props {
     productoId: string;
@@ -23,6 +25,7 @@ export default function AjustarStockModal({
     onClose,
 }: Props) {
     const queryClient = useQueryClient();
+    const router = useRouter();
 
     const form = useForm<AjusteStockFormValues>({
         initialValues: {
@@ -36,8 +39,10 @@ export default function AjustarStockModal({
     const { execute, loading } = useActionHandler({
         form,
         onSuccess: () => {
+            AppNotifier.success({ message: "Stock ajustado correctamente." });
             void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.productos.all });
             void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.inventario.all });
+            router.refresh();
             onClose();
         },
     });
@@ -72,7 +77,7 @@ export default function AjustarStockModal({
                     {...form.getInputProps(AJUSTE_STOCK_FIELDS.RAZON)}
                 />
                 <Group justify="flex-end" gap="sm">
-                    <Button variant="light" color="gray" onClick={onClose} disabled={loading}>
+                    <Button variant="light" onClick={onClose} disabled={loading}>
                         Cancelar
                     </Button>
                     <Button type="submit" loading={loading}>
