@@ -21,7 +21,7 @@ public sealed class ObtenerReporteInventarioExcelEndpoint(IMediator mediator)
 
     public override async Task HandleAsync(ObtenerReporteInventarioRequest req, CancellationToken ct)
     {
-        var query = new ObtenerReporteInventarioExcelQuery(req.Codigo, req.CategoriaId);
+        var query = new ObtenerReporteInventarioExcelQuery(req.Codigo, req.CategoriaId, req.ProveedorId);
         var result = await _mediator.Send(query, ct);
         if (result.IsError)
         {

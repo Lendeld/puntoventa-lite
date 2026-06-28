@@ -9,6 +9,7 @@ public sealed record InventarioReporteProyeccionDto
     public string Nombre { get; init; } = string.Empty;
     public string? Descripcion { get; init; }
     public string? Categoria { get; init; }   // null si sin categoría
+    public string? Proveedor { get; init; }  // null si sin proveedor
     public DateTime FechaCreacion { get; init; }
     public decimal Existencia { get; init; }
     public decimal PrecioUnitario { get; init; }   // precio neto (sin IVA), ver Decisiones
@@ -16,13 +17,14 @@ public sealed record InventarioReporteProyeccionDto
     public decimal TarifaPorcentaje { get; init; } // 0 si sin tarifa
 }
 
-// Una fila por producto en el reporte (13 columnas del contrato).
+// Una fila por producto en el reporte (14 columnas del contrato).
 public sealed record ReporteInventarioFilaDto(
     Guid ProductoId,
     string Codigo,
     string Nombre,
     string Descripcion,
     string Categoria,
+    string Proveedor,
     DateTime FechaCreacion,
     decimal Existencia,
     decimal PrecioCosto,

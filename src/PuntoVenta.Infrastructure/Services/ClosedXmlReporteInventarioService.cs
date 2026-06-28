@@ -26,7 +26,7 @@ public sealed class ClosedXmlReporteInventarioService : IReporteInventarioExcelS
 
         string[] encabezados =
         [
-            "Código", "Nombre", "Descripción", "Categoría", "Fecha de creación",
+            "Código", "Nombre", "Descripción", "Categoría", "Proveedor", "Fecha de creación",
             "Existencia", "Precio costo", "Precio neto", "Tarifa %",
             "Monto impuesto", "Precio de venta", "Valor al costo", "Valor de venta"
         ];
@@ -42,6 +42,7 @@ public sealed class ClosedXmlReporteInventarioService : IReporteInventarioExcelS
             hoja.Cell(fila, c++).Value = f.Nombre;
             hoja.Cell(fila, c++).Value = f.Descripcion;
             hoja.Cell(fila, c++).Value = string.IsNullOrEmpty(f.Categoria) ? "-" : f.Categoria;
+            hoja.Cell(fila, c++).Value = string.IsNullOrEmpty(f.Proveedor) ? "-" : f.Proveedor;
             hoja.Cell(fila, c++).Value = FechaCR(f.FechaCreacion);
             Cantidad(hoja.Cell(fila, c++), f.Existencia);
             Numero(hoja.Cell(fila, c++), f.PrecioCosto);
@@ -54,14 +55,14 @@ public sealed class ClosedXmlReporteInventarioService : IReporteInventarioExcelS
             fila++;
         }
 
-        // Fila de totales: Existencia(6), Monto impuesto(10), Valor al costo(12), Valor de venta(13).
+        // Fila de totales: Existencia(7), Monto impuesto(11), Valor al costo(13), Valor de venta(14).
         var totalCol = hoja.Cell(fila, 1);
         totalCol.Value = "Totales";
         totalCol.Style.Font.Bold = true;
-        Cantidad(hoja.Cell(fila, 6), resultado.TotalExistencia, negrita: true);
-        Numero(hoja.Cell(fila, 10), resultado.TotalValorImpuesto, negrita: true);
-        Numero(hoja.Cell(fila, 12), resultado.TotalValorCosto, negrita: true);
-        Numero(hoja.Cell(fila, 13), resultado.TotalValorVenta, negrita: true);
+        Cantidad(hoja.Cell(fila, 7), resultado.TotalExistencia, negrita: true);
+        Numero(hoja.Cell(fila, 11), resultado.TotalValorImpuesto, negrita: true);
+        Numero(hoja.Cell(fila, 13), resultado.TotalValorCosto, negrita: true);
+        Numero(hoja.Cell(fila, 14), resultado.TotalValorVenta, negrita: true);
 
         hoja.Columns().AdjustToContents();
 

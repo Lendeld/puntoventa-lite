@@ -12,6 +12,7 @@ public sealed class ObtenerReporteInventarioRequest
 {
     public string? Codigo { get; set; }
     public Guid? CategoriaId { get; set; }
+    public Guid? ProveedorId { get; set; }
 }
 
 public sealed class ObtenerReporteInventarioEndpoint(IMediator mediator)
@@ -29,7 +30,7 @@ public sealed class ObtenerReporteInventarioEndpoint(IMediator mediator)
 
     public override async Task HandleAsync(ObtenerReporteInventarioRequest req, CancellationToken ct)
     {
-        var query = new ObtenerReporteInventarioQuery(req.Codigo, req.CategoriaId);
+        var query = new ObtenerReporteInventarioQuery(req.Codigo, req.CategoriaId, req.ProveedorId);
         var result = await _mediator.Send(query, ct);
         if (result.IsError) { await Send.ResultAsync(result.Errors.ToProblem()); return; }
         await Send.OkAsync(result.Value, ct);

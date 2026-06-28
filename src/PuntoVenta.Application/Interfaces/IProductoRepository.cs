@@ -13,6 +13,7 @@ public interface IProductoRepository : IRepository<Producto>
     Task<IReadOnlyList<InventarioReporteProyeccionDto>> ObtenerReporteInventarioProyectadoAsync(
         string? codigo,
         Guid? categoriaId,
+        Guid? proveedorId,
         int maxFilas,
         CancellationToken cancellationToken = default);
 

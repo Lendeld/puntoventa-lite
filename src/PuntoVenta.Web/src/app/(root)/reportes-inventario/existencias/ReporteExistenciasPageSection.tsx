@@ -3,7 +3,6 @@
 import {
     Button,
     Divider,
-    Group,
     Paper,
     Select,
     Stack,
@@ -15,11 +14,13 @@ import { IconArrowLeft, IconFileSpreadsheet, IconReportMoney } from "@tabler/ico
 import Link from "next/link";
 import { parseAsString, useQueryState } from "nuqs";
 import { useCategoriasActivasQuery } from "@lib/hooks/useCategoriasActivasQuery";
+import { useProveedoresActivosQuery } from "@lib/hooks/useProveedoresActivosQuery";
 import { ROUTES } from "@lib/constants/routes.constants";
 
 export function ReporteExistenciasPageSection() {
     const [codigo, setCodigo] = useQueryState("codigo", parseAsString.withDefault(""));
     const [categoria, setCategoria] = useQueryState("categoria", parseAsString.withDefault(""));
+    const [proveedor, setProveedor] = useQueryState("proveedor", parseAsString.withDefault(""));
 
     const { data: categorias } = useCategoriasActivasQuery();
     const categoriaOptions = [
@@ -27,10 +28,17 @@ export function ReporteExistenciasPageSection() {
         ...(categorias ?? []).map((c) => ({ value: c.id, label: c.nombre })),
     ];
 
+    const { data: proveedores } = useProveedoresActivosQuery();
+    const proveedorOptions = [
+        { value: "", label: "Todos los proveedores" },
+        ...(proveedores ?? []).map((p) => ({ value: p.id, label: p.nombre })),
+    ];
+
     function descargarExcel() {
         const qs = new URLSearchParams();
         if (codigo.trim()) qs.set("Codigo", codigo.trim());
         if (categoria) qs.set("CategoriaId", categoria);
+        if (proveedor) qs.set("ProveedorId", proveedor);
         const a = document.createElement("a");
         a.href = `/excel/inventario/existencias${qs.size ? `?${qs.toString()}` : ""}`;
         a.download = "";
@@ -85,23 +93,33 @@ export function ReporteExistenciasPageSection() {
                         <Divider />
 
                         <Stack gap="md">
-                            <Group grow align="end" wrap="wrap" gap="md">
-                                <TextInput
-                                    label="Código"
-                                    placeholder="Opcional"
-                                    value={codigo}
-                                    onChange={(e) => void setCodigo(e.currentTarget.value)}
-                                />
-                                <Select
-                                    label="Categoría"
-                                    data={categoriaOptions}
-                                    value={categoria}
-                                    onChange={(v) => void setCategoria(v ?? "")}
-                                    comboboxProps={{ withinPortal: true }}
-                                    allowDeselect={false}
-                                    searchable
-                                />
-                            </Group>
+                            <Text size="xs" fw={600} c="dimmed" tt="uppercase" className="tracking-wide">
+                                Filtros
+                            </Text>
+                            <TextInput
+                                label="Código"
+                                placeholder="Opcional"
+                                value={codigo}
+                                onChange={(e) => void setCodigo(e.currentTarget.value)}
+                            />
+                            <Select
+                                label="Categoría"
+                                data={categoriaOptions}
+                                value={categoria}
+                                onChange={(v) => void setCategoria(v ?? "")}
+                                comboboxProps={{ withinPortal: true }}
+                                allowDeselect={false}
+                                searchable
+                            />
+                            <Select
+                                label="Proveedor"
+                                data={proveedorOptions}
+                                value={proveedor}
+                                onChange={(v) => void setProveedor(v ?? "")}
+                                comboboxProps={{ withinPortal: true }}
+                                allowDeselect={false}
+                                searchable
+                            />
                         </Stack>
 
                         <Button

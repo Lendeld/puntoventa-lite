@@ -202,7 +202,7 @@ public class CrearProductoHandlerTests
             => Task.FromResult<(IReadOnlyList<Producto>, int)>(([], 0));
 
         public Task<IReadOnlyList<PuntoVenta.Application.DTOs.Inventarios.InventarioReporteProyeccionDto>> ObtenerReporteInventarioProyectadoAsync(
-            string? codigo, Guid? categoriaId, int maxFilas, CancellationToken cancellationToken = default)
+            string? codigo, Guid? categoriaId, Guid? proveedorId, int maxFilas, CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<PuntoVenta.Application.DTOs.Inventarios.InventarioReporteProyeccionDto>>([]);
 
         public Task<Producto> AddAsync(Producto entity, CancellationToken cancellationToken = default)

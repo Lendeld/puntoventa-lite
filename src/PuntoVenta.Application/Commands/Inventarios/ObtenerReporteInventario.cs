@@ -8,7 +8,8 @@ namespace PuntoVenta.Application.Commands.Inventarios;
 
 public sealed record ObtenerReporteInventarioQuery(
     string? Codigo,
-    Guid? CategoriaId) : IRequest<ErrorOr<ReporteInventarioResultadoDto>>;
+    Guid? CategoriaId,
+    Guid? ProveedorId) : IRequest<ErrorOr<ReporteInventarioResultadoDto>>;
 
 public sealed class ObtenerReporteInventarioHandler(
     IProductoRepository productoRepository)
@@ -25,6 +26,7 @@ public sealed class ObtenerReporteInventarioHandler(
         var proyeccion = await _productoRepository.ObtenerReporteInventarioProyectadoAsync(
             codigoTrim,
             query.CategoriaId,
+            query.ProveedorId,
             IProductoRepository.MaxFilasReporteInventario,
             cancellationToken);
 
@@ -70,6 +72,7 @@ public sealed class ObtenerReporteInventarioHandler(
             Nombre: p.Nombre,
             Descripcion: p.Descripcion ?? string.Empty,
             Categoria: p.Categoria ?? string.Empty,   // null -> "" -> Excel muestra "-"
+            Proveedor: p.Proveedor ?? string.Empty,  // null -> "" -> Excel muestra "-"
             FechaCreacion: p.FechaCreacion,
             Existencia: p.Existencia,
             PrecioCosto: precioCosto,
