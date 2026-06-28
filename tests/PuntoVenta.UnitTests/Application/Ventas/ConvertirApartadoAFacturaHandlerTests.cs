@@ -95,6 +95,7 @@ public class ConvertirApartadoAFacturaHandlerTests
     {
         // Producto con control de existencia (noAplicaExistencias=false) y 0 unidades.
         var producto = Producto.Crear("APT-STK", "Prod Apartado", TipoItem.Bien, 500m,
+            tarifaIvaImpuestoCodigo: "08",
             noAplicaExistencias: false).Value;
         // existencia = 0
 

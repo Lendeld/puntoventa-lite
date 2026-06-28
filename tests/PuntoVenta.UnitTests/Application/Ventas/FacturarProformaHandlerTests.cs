@@ -18,6 +18,7 @@ public class FacturarProformaHandlerTests
     {
         // Producto sin existencias (noAplicaExistencias=false, existencia=0).
         var producto = Producto.Crear("PRO-STK", "Prod Proforma", TipoItem.Bien, 800m,
+            tarifaIvaImpuestoCodigo: "08",
             noAplicaExistencias: false).Value;
 
         var proforma = CrearProformaNumeradaConProducto(producto, cantidad: 10m);
@@ -45,6 +46,7 @@ public class FacturarProformaHandlerTests
     public async Task Handle_DebeEmitirFactura_CuandoStockSuficiente()
     {
         var producto = Producto.Crear("PRO-OK", "Prod Proforma OK", TipoItem.Bien, 100m,
+            tarifaIvaImpuestoCodigo: "08",
             noAplicaExistencias: false).Value;
         producto.AplicarMovimientoStock(5m);
 
@@ -73,6 +75,7 @@ public class FacturarProformaHandlerTests
     {
         // Bien con noAplicaExistencias=true (p.ej. activo que no se controla por stock)
         var producto = Producto.Crear("PRO-SRVK", "Bien Sin Existencias", TipoItem.Bien, 200m,
+            tarifaIvaImpuestoCodigo: "08",
             noAplicaExistencias: true).Value;
         // existencia = 0, pero noAplicaExistencias=true → se saltea validación
 

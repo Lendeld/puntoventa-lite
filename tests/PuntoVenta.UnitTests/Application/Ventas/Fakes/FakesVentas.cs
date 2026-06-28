@@ -30,7 +30,7 @@ internal static class DominioHelper
     public static Producto CrearProducto(decimal precio = 1000m)
         => Producto.Crear("PROD01", "Producto Test", TipoItem.Bien, precio,
             categoriaId: null,
-            tarifaIvaImpuestoCodigo: null,
+            tarifaIvaImpuestoCodigo: "08",
             noAplicaExistencias: true,
             permiteModificarPrecioUnitario: true).Value;
 

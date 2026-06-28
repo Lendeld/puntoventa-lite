@@ -56,6 +56,7 @@ public sealed class DomainEventsIntegrationTests
                 Nombre = "Producto evento test",
                 TipoItem = 1, // Bien
                 PrecioUnitario = 1500m,
+                TarifaIvaImpuestoCodigo = "10", // Exenta (0% IVA): mantiene total == subtotal en los flujos
                 ExistenciaInicial = 1000m
             }, TestContext.Current.CancellationToken);
             productoResp.EnsureSuccessStatusCode();

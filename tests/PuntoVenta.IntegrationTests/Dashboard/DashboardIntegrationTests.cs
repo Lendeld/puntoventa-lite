@@ -86,6 +86,7 @@ public sealed class DashboardIntegrationTests
             Nombre = $"Producto {codigo}",
             TipoItem = 1,
             PrecioUnitario = precio,
+            TarifaIvaImpuestoCodigo = "08",
             ExistenciaInicial = 1000m
         }, TestContext.Current.CancellationToken);
         resp.EnsureSuccessStatusCode();

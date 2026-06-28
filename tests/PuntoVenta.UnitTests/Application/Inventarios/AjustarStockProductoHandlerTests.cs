@@ -15,7 +15,8 @@ public class AjustarStockProductoHandlerTests
 
     private static Producto CrearProductoConStock(decimal existencia)
     {
-        var p = Producto.Crear("AJ01", "Ajuste Test", TipoItem.Bien, 500m).Value;
+        var p = Producto.Crear("AJ01", "Ajuste Test", TipoItem.Bien, 500m,
+            tarifaIvaImpuestoCodigo: "08").Value;
         if (existencia > 0)
             p.AplicarMovimientoStock(existencia);
         return p;
