@@ -45,10 +45,13 @@ const baseSchema = z.object({
     [PRODUCTO_FIELDS.CATEGORIA_ID]: z
         .union([z.string().uuid(), z.literal("")])
         .optional(),
+    [PRODUCTO_FIELDS.PROVEEDOR_ID]: z
+        .union([z.string().uuid(), z.literal("")])
+        .optional(),
     [PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO]: z
         .string()
-        .nullable()
-        .optional(),
+        .trim()
+        .min(1, "La tarifa de IVA es requerida."),
     [PRODUCTO_FIELDS.NO_APLICA_EXISTENCIAS]: z.boolean().default(false),
     [PRODUCTO_FIELDS.PERMITE_MODIFICAR_PRECIO_UNITARIO]: z.boolean().default(false),
     [PRODUCTO_FIELDS.EXISTENCIA_INICIAL]: z

@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoriaSelect } from "@ui/selects/CategoriaSelect";
+import { ProveedorSelect } from "@ui/selects/ProveedorSelect";
 import { TarifaIvaSelect } from "@ui/selects/TarifaIvaSelect";
 import { PRODUCTO_FIELDS } from "@lib/constants/productos.constants";
 import type {
@@ -127,6 +128,7 @@ export function ProductoFormFields({
                     allowDeselect={false}
                 />
             </Grid.Col>
+            <Grid.Col span={6} />
             <Grid.Col span={6}>
                 <CategoriaSelect
                     label="Categoría"
@@ -136,6 +138,17 @@ export function ProductoFormFields({
                         form.setFieldValue(PRODUCTO_FIELDS.CATEGORIA_ID, val ?? "")
                     }
                     error={form.errors[PRODUCTO_FIELDS.CATEGORIA_ID]}
+                />
+            </Grid.Col>
+            <Grid.Col span={6}>
+                <ProveedorSelect
+                    label="Proveedor"
+                    placeholder="Sin proveedor"
+                    value={form.values[PRODUCTO_FIELDS.PROVEEDOR_ID] || null}
+                    onChange={(val) =>
+                        form.setFieldValue(PRODUCTO_FIELDS.PROVEEDOR_ID, val ?? "")
+                    }
+                    error={form.errors[PRODUCTO_FIELDS.PROVEEDOR_ID]}
                 />
             </Grid.Col>
 
@@ -190,8 +203,9 @@ export function ProductoFormFields({
             <Grid.Col span={12}>
                 <TarifaIvaSelect
                     label="Tarifa IVA"
-                    placeholder="Sin tarifa IVA"
-                    value={tarifaIvaCodigo ?? null}
+                    placeholder="Seleccionar tarifa IVA"
+                    required
+                    value={tarifaIvaCodigo || null}
                     onChange={handleTarifaChange}
                     error={form.errors[PRODUCTO_FIELDS.TARIFA_IVA_IMPUESTO_CODIGO]}
                 />
