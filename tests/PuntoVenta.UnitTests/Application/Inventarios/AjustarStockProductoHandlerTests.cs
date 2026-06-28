@@ -110,7 +110,7 @@ public class AjustarStockProductoHandlerTests
         public Task<IReadOnlyList<Producto>> ObtenerPorIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Producto>>([]);
         public Task<IReadOnlyList<Producto>> ObtenerPorIdsEditablesAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Producto>>([]);
         public Task<(IReadOnlyList<Producto> Items, int Total)> ObtenerListaPaginadoAsync(int p, int t, string? f, TipoItem? ti, Guid? cat, CancellationToken ct = default) => Task.FromResult<(IReadOnlyList<Producto>, int)>(([], 0));
-        public Task<IReadOnlyList<InventarioReporteProyeccionDto>> ObtenerReporteInventarioProyectadoAsync(string? c, Guid? cat, int max, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<InventarioReporteProyeccionDto>>([]);
+        public Task<IReadOnlyList<InventarioReporteProyeccionDto>> ObtenerReporteInventarioProyectadoAsync(string? c, Guid? cat, Guid? prov, int max, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<InventarioReporteProyeccionDto>>([]);
         public Task<Producto?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult<Producto?>(null);
         public Task<IReadOnlyList<Producto>> GetAllAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Producto>>([]);
         public Task<Producto> AddAsync(Producto e, CancellationToken ct = default) => Task.FromResult(e);

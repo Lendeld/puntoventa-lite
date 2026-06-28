@@ -503,7 +503,7 @@ internal sealed class FakeProductoRepository : IProductoRepository
         => Task.FromResult<(IReadOnlyList<Producto>, int)>(([], 0));
 
     public Task<IReadOnlyList<InventarioReporteProyeccionDto>> ObtenerReporteInventarioProyectadoAsync(
-        string? codigo, Guid? categoriaId, int maxFilas, CancellationToken cancellationToken = default)
+        string? codigo, Guid? categoriaId, Guid? proveedorId, int maxFilas, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<InventarioReporteProyeccionDto>>([]);
 
     public Task<IReadOnlyList<Producto>> GetAllAsync(CancellationToken cancellationToken = default)

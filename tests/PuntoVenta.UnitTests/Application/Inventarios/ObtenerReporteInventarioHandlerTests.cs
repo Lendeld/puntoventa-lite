@@ -29,7 +29,7 @@ public class ObtenerReporteInventarioHandlerTests
         ]);
         var handler = new ObtenerReporteInventarioHandler(repo);
 
-        var result = await handler.Handle(new ObtenerReporteInventarioQuery(null, null), CancellationToken.None);
+        var result = await handler.Handle(new ObtenerReporteInventarioQuery(null, null, null), CancellationToken.None);
 
         Assert.False(result.IsError);
         var dto = result.Value;
@@ -63,7 +63,7 @@ public class ObtenerReporteInventarioHandlerTests
         ]);
         var handler = new ObtenerReporteInventarioHandler(repo);
 
-        var result = await handler.Handle(new ObtenerReporteInventarioQuery(null, null), CancellationToken.None);
+        var result = await handler.Handle(new ObtenerReporteInventarioQuery(null, null, null), CancellationToken.None);
 
         Assert.False(result.IsError);
         var fila = result.Value.Filas[0];
@@ -90,7 +90,7 @@ public class ObtenerReporteInventarioHandlerTests
         ]);
         var handler = new ObtenerReporteInventarioHandler(repo);
 
-        var result = await handler.Handle(new ObtenerReporteInventarioQuery(null, null), CancellationToken.None);
+        var result = await handler.Handle(new ObtenerReporteInventarioQuery(null, null, null), CancellationToken.None);
 
         Assert.False(result.IsError);
         Assert.Equal(string.Empty, result.Value.Filas[0].Categoria);
@@ -113,10 +113,53 @@ public class ObtenerReporteInventarioHandlerTests
         var repo = new FakeReporteInventarioRepository(filas);
         var handler = new ObtenerReporteInventarioHandler(repo);
 
-        var result = await handler.Handle(new ObtenerReporteInventarioQuery(null, null), CancellationToken.None);
+        var result = await handler.Handle(new ObtenerReporteInventarioQuery(null, null, null), CancellationToken.None);
 
         Assert.True(result.IsError);
         Assert.Contains(result.Errors, e => e.Code == "ReporteInventario_DemasiadasFilas");
+    }
+
+    // (e) ProveedorId null -> proveedor = "" ; nombre de proveedor se copia tal cual
+    [Fact]
+    public async Task Handle_ProveedorNulo_DevuelveCadenaVacia_YNombreSeCopia()
+    {
+        var repo = new FakeReporteInventarioRepository(
+        [
+            new InventarioReporteProyeccionDto
+            {
+                ProductoId = Guid.NewGuid(), Codigo = "P01", Nombre = "Prod 1",
+                Existencia = 1m, PrecioUnitario = 100m, TarifaPorcentaje = 0m,
+                Proveedor = null,   // sin proveedor
+                FechaCreacion = DateTime.UtcNow,
+            },
+            new InventarioReporteProyeccionDto
+            {
+                ProductoId = Guid.NewGuid(), Codigo = "P02", Nombre = "Prod 2",
+                Existencia = 1m, PrecioUnitario = 100m, TarifaPorcentaje = 0m,
+                Proveedor = "Prov X",
+                FechaCreacion = DateTime.UtcNow,
+            },
+        ]);
+        var handler = new ObtenerReporteInventarioHandler(repo);
+
+        var result = await handler.Handle(new ObtenerReporteInventarioQuery(null, null, null), CancellationToken.None);
+
+        Assert.False(result.IsError);
+        Assert.Equal(string.Empty, result.Value.Filas[0].Proveedor);
+        Assert.Equal("Prov X", result.Value.Filas[1].Proveedor);
+    }
+
+    // (f) ProveedorId se pasa al repo (el filtrado real lo hace EF)
+    [Fact]
+    public async Task Handle_PasaProveedorIdAlRepo()
+    {
+        var repo = new FakeReporteInventarioRepository([]);
+        var handler = new ObtenerReporteInventarioHandler(repo);
+        var unGuid = Guid.NewGuid();
+
+        await handler.Handle(new ObtenerReporteInventarioQuery(null, null, unGuid), CancellationToken.None);
+
+        Assert.Equal(unGuid, repo.CapturedProveedorId);
     }
 
     // ── Fake privado ────────────────────────────────────────────────────────────
@@ -124,9 +167,14 @@ public class ObtenerReporteInventarioHandlerTests
     private sealed class FakeReporteInventarioRepository(
         IReadOnlyList<InventarioReporteProyeccionDto> proyeccion) : IProductoRepository
     {
+        public Guid? CapturedProveedorId { get; private set; }
+
         public Task<IReadOnlyList<InventarioReporteProyeccionDto>> ObtenerReporteInventarioProyectadoAsync(
-            string? codigo, Guid? categoriaId, int maxFilas, CancellationToken cancellationToken = default)
-            => Task.FromResult(proyeccion);
+            string? codigo, Guid? categoriaId, Guid? proveedorId, int maxFilas, CancellationToken cancellationToken = default)
+        {
+            CapturedProveedorId = proveedorId;
+            return Task.FromResult(proyeccion);
+        }
 
         // Resto de la interfaz — no usados en estos tests
         public Task<bool> ExisteCodigoAsync(string codigo, CancellationToken ct = default) => Task.FromResult(false);
